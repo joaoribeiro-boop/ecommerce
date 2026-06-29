@@ -43,6 +43,59 @@
     initCategories();
   }
 
+  /* ---------- Diagnóstico de conexão ---------- */
+  async function testConnection() {
+    const box = $("test-result");
+    box.classList.remove("hidden");
+    box.innerHTML = "<div class='line'>Testando…</div>";
+    const site = $("site").value;
+    const token = $("token").value.trim();
+    const lines = [];
+
+    // Estado do token
+    lines.push(`<div class="line">${token ? "🔑" : "⚪"} Token: <strong>${token ? "configurado" : "nenhum"}</strong></div>`);
+
+    // 1) Categorias (público)
+    let firstCat = "MLB1051";
+    try {
+      const cats = await ML.categories(site);
+      firstCat = (cats && cats[0] && cats[0].id) || firstCat;
+      lines.push(`<div class="line"><span class="ok">✅</span> Categorias: <strong>OK</strong> (${cats.length} categorias)</div>`);
+    } catch (e) {
+      const st = e.status != null ? e.status : "—";
+      lines.push(`<div class="line"><span class="bad">❌</span> Categorias: <strong>falhou</strong> — <code>${e.kind === "network" ? "rede/CORS" : "HTTP " + st}</code></div>`);
+    }
+
+    // 2) Busca (exige token na política atual)
+    let searchStatus = null, searchKind = null;
+    try {
+      const page = await ML.searchPage(site, { category: firstCat, limit: 1 });
+      const n = page && page.paging ? page.paging.total : 0;
+      lines.push(`<div class="line"><span class="ok">✅</span> Busca: <strong>OK</strong> (${Number(n).toLocaleString("pt-BR")} anúncios na categoria de teste)</div>`);
+    } catch (e) {
+      searchStatus = e.status; searchKind = e.kind;
+      const st = e.status != null ? e.status : "—";
+      lines.push(`<div class="line"><span class="bad">❌</span> Busca: <strong>falhou</strong> — <code>${e.kind === "network" ? "rede/CORS" : "HTTP " + st}</code></div>`);
+    }
+
+    // Diagnóstico/recomendação
+    let hint = "";
+    if (searchStatus === 401 || searchStatus === 403) {
+      hint = "A busca exige <strong>Access Token</strong>. Cole um token válido (APP_USR-…) no campo acima e clique em Salvar. " +
+        "A API do Mercado Livre não permite mais busca anônima.";
+    } else if (searchKind === "network") {
+      hint = "Erro de <strong>rede/CORS</strong>: o navegador bloqueou a chamada. Isso ocorre mais quando você abre o arquivo direto " +
+        "(<code>file://</code>). Tente servir por <code>http://localhost</code> (veja o README) ou use um proxy.";
+    } else if (searchStatus === 429) {
+      hint = "Limite de requisições atingido (429). Reduza o <strong>req/s</strong> e tente de novo.";
+    } else if (searchStatus != null) {
+      hint = `A busca retornou <code>HTTP ${searchStatus}</code>. Veja o detalhe no Console (F12).`;
+    }
+    if (hint) lines.push(`<div class="hint">💡 ${hint}</div>`);
+
+    box.innerHTML = lines.join("");
+  }
+
   /* ---------- Erros ---------- */
   function showError(err) {
     $("progress-card").classList.add("hidden");
@@ -271,6 +324,7 @@
 
     $("btn-settings").addEventListener("click", () => $("settings").classList.toggle("hidden"));
     $("btn-save-settings").addEventListener("click", saveSettings);
+    $("btn-test").addEventListener("click", testConnection);
     $("btn-run").addEventListener("click", run);
     $("btn-export").addEventListener("click", exportXlsx);
 

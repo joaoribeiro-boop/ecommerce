@@ -132,5 +132,22 @@ th { background: #f8fafc; font-weight: 600; position: sticky; top: 0; }
 tbody tr:hover { background: #f9fafb; }
 td.num, th.num { text-align: right; }
 
+button.ghost-dark { background: #eef2ff; color: var(--brand-dark); border: 1px solid #c7d2fe; }
+button.ghost-dark:hover { background: #e0e7ff; }
+
+.test-result {
+  margin-top: 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  background: #f8fafc;
+  font-size: 13px;
+}
+.test-result .line { display: flex; gap: 8px; align-items: baseline; padding: 3px 0; }
+.test-result .ok { color: var(--ok); font-weight: 700; }
+.test-result .bad { color: var(--err); font-weight: 700; }
+.test-result code { background: #eef2ff; padding: 1px 5px; border-radius: 4px; font-size: 12px; }
+.test-result .hint { margin-top: 8px; color: var(--muted); }
+
 .footer { text-align: center; padding: 24px; }
 .footer p { margin: 0; font-size: 12px; color: var(--muted); }
