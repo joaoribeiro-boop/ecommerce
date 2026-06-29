@@ -1,0 +1,13 @@
+{
+  "name": "analise-mercado-ml",
+  "version": "1.0.0",
+  "description": "Agente de análise de mercado via API do Mercado Livre, com backend mínimo para OAuth e geração de planilha .xlsx.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT"
+}

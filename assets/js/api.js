@@ -8,14 +8,34 @@
  * ===================================================================== */
 
 const ML = (function () {
-  const BASE = "https://api.mercadolibre.com";
+  const DIRECT_BASE = "https://api.mercadolibre.com";
 
   // Estado configurável em runtime
   const config = {
     requestsPerSecond: 4, // limite padrão; ajustável na UI
-    token: "", // access token opcional (OAuth)
+    token: "", // access token opcional (modo direto, sem backend)
     maxRetries: 4,
+    base: DIRECT_BASE, // muda para "/api" quando o backend é detectado
+    useProxy: false, // true quando rodando sob server.js
   };
+
+  /* Detecta se estamos rodando sob o backend (server.js). Se sim, roteia
+   * as chamadas por /api (o backend injeta o token). Caso contrário,
+   * mantém o modo direto na API pública + token manual opcional. */
+  async function detectBackend() {
+    try {
+      const res = await fetch("/auth/status", { headers: { Accept: "application/json" } });
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.backend) {
+          config.useProxy = true;
+          config.base = "/api";
+          return data; // { backend, hasCredentials, authenticated, expiresAt }
+        }
+      }
+    } catch (_) { /* file:// ou servidor estático comum -> modo direto */ }
+    return null;
+  }
 
   // ----- Rate limiter: fila que garante intervalo mínimo entre chamadas -----
   let queue = Promise.resolve();
@@ -44,7 +64,9 @@ const ML = (function () {
 
   // ----- GET com retry/backoff -----
   async function get(path, params) {
-    const url = new URL(BASE + path);
+    // Em modo proxy a base é relativa ("/api"); resolve contra a origem atual.
+    const root = typeof location !== "undefined" ? location.href : "http://localhost";
+    const url = new URL(config.base + path, root);
     if (params) {
       Object.entries(params).forEach(([k, v]) => {
         if (v !== undefined && v !== null && v !== "") url.searchParams.set(k, v);
@@ -52,7 +74,8 @@ const ML = (function () {
     }
 
     const headers = { Accept: "application/json" };
-    if (config.token) headers.Authorization = "Bearer " + config.token;
+    // No modo proxy quem injeta o token é o backend.
+    if (!config.useProxy && config.token) headers.Authorization = "Bearer " + config.token;
 
     let attempt = 0;
     // Cada tentativa passa pela fila (rate limiter).
@@ -148,6 +171,7 @@ const ML = (function () {
   return {
     config,
     MLError,
+    detectBackend,
     categories,
     category,
     searchPage,

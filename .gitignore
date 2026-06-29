@@ -1,0 +1,10 @@
+# Credenciais e tokens — NUNCA commitar
+.env
+tokens.json
+
+# Node
+node_modules/
+npm-debug.log*
+
+# Sistema
+.DS_Store

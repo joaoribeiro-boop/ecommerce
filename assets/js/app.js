@@ -319,7 +319,27 @@
   }
 
   /* ---------- Bind de eventos ---------- */
-  function init() {
+  function renderAuthBanner(status) {
+    const el = $("auth-banner");
+    el.classList.remove("hidden");
+    if (!status.hasCredentials) {
+      el.classList.add("warn");
+      el.innerHTML = "⚠️ <strong>Backend ativo, mas sem credenciais.</strong> " +
+        "Crie um arquivo <code>.env</code> com <code>ML_CLIENT_ID</code> e <code>ML_CLIENT_SECRET</code> " +
+        "(veja o <code>.env.example</code> e o README) e reinicie o servidor.";
+    } else if (!status.authenticated) {
+      el.innerHTML =
+        "<div class='row-between'><span>🔌 <strong>Backend ativo.</strong> Conecte sua conta do Mercado Livre para liberar a busca.</span>" +
+        "<a class='btn-link' href='/auth/login'>Conectar ao Mercado Livre →</a></div>";
+    } else {
+      el.classList.add("ok");
+      el.innerHTML =
+        "<div class='row-between'><span>✅ <strong>Conectado ao Mercado Livre.</strong> O token é renovado automaticamente.</span>" +
+        "<a class='btn-link muted-link' href='/auth/logout'>Sair</a></div>";
+    }
+  }
+
+  async function init() {
     loadSettings();
 
     $("btn-settings").addEventListener("click", () => $("settings").classList.toggle("hidden"));
@@ -327,6 +347,15 @@
     $("btn-test").addEventListener("click", testConnection);
     $("btn-run").addEventListener("click", run);
     $("btn-export").addEventListener("click", exportXlsx);
+
+    // Detecta o backend antes de chamar a API.
+    const backend = await ML.detectBackend();
+    if (backend) {
+      renderAuthBanner(backend);
+      // No modo backend o token é gerenciado pelo servidor: oculta o campo manual.
+      const tokenLabel = $("token").closest("label");
+      if (tokenLabel) tokenLabel.classList.add("hidden");
+    }
 
     initCategories();
   }

@@ -149,5 +149,23 @@ button.ghost-dark:hover { background: #e0e7ff; }
 .test-result code { background: #eef2ff; padding: 1px 5px; border-radius: 4px; font-size: 12px; }
 .test-result .hint { margin-top: 8px; color: var(--muted); }
 
+.auth-banner { font-size: 14px; }
+.auth-banner.warn { background: #fffbeb; border-color: #fde68a; }
+.auth-banner.ok { background: #f0fdf4; border-color: #bbf7d0; }
+.auth-banner code { background: #eef2ff; padding: 1px 5px; border-radius: 4px; font-size: 12px; }
+.btn-link {
+  display: inline-block;
+  background: var(--brand);
+  color: #fff;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 14px;
+  padding: 9px 16px;
+  border-radius: 8px;
+  white-space: nowrap;
+}
+.btn-link:hover { background: var(--brand-dark); }
+.btn-link.muted-link { background: transparent; color: var(--muted); padding: 9px 4px; }
+
 .footer { text-align: center; padding: 24px; }
 .footer p { margin: 0; font-size: 12px; color: var(--muted); }

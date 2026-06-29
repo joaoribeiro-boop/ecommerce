@@ -1,25 +1,53 @@
 # Análise de Mercado · Mercado Livre
 
-Agente **100% client-side** (HTML + JavaScript, sem backend) que faz pesquisa de
-mercado batendo na **API do Mercado Livre**, respeitando o limite de requisições
-para evitar bloqueio, e gera uma **planilha tratada (.xlsx)** filtrada por
-categoria.
+Agente de pesquisa de mercado que bate na **API do Mercado Livre**, respeita o
+limite de requisições para evitar bloqueio, e gera uma **planilha tratada
+(.xlsx)** filtrada por categoria.
 
-## Como usar
+> ⚠️ **A API do Mercado Livre acabou com a busca anônima.** O endpoint de busca
+> exige autenticação (OAuth). Por isso o projeto inclui um **backend mínimo**
+> (1 arquivo Node, sem dependências) que cuida do login e renova o token
+> sozinho. As categorias são públicas; só a busca precisa do token.
 
-1. Abra o `index.html` no navegador.
-   - **Recomendado:** sirva por um servidor local para evitar restrições do
-     `file://`:
-     ```bash
-     python3 -m http.server 8000
-     # abra http://localhost:8000
-     ```
-2. Em **1. Escolha a categoria**, selecione a categoria e, se quiser, aprofunde
-   nas subcategorias. Opcionalmente informe uma **palavra-chave**, **condição**
+## Modo recomendado: com backend (token automático)
+
+### 1. Crie sua aplicação no Mercado Livre
+1. Acesse <https://developers.mercadolivre.com.br/devcenter> e crie uma aplicação.
+2. Em **URIs de redirect**, cadastre **exatamente**:
+   `http://localhost:3000/auth/callback`
+3. Anote o **Client ID** e o **Client Secret**.
+
+### 2. Configure as credenciais
+```bash
+cp .env.example .env
+# edite o .env e preencha ML_CLIENT_ID e ML_CLIENT_SECRET
+```
+
+### 3. Rode o servidor
+```bash
+node server.js
+# ou: npm start
+```
+Abra <http://localhost:3000>, clique em **“Conectar ao Mercado Livre”**, autorize,
+e pronto — o token passa a ser renovado automaticamente.
+
+### 4. Use
+1. Em **1. Escolha a categoria**, selecione a categoria e, se quiser, aprofunde
+   nas subcategorias. Opcionalmente informe **palavra-chave**, **condição**
    (novo/usado), **quantidade de anúncios** e **ordenação**.
-3. Clique em **🔎 Analisar mercado**. O app coleta os dados com controle de
-   ritmo e mostra um resumo + prévia.
-4. Clique em **⬇️ Baixar planilha (.xlsx)**.
+2. Clique em **🔎 Analisar mercado** e depois em **⬇️ Baixar planilha (.xlsx)**.
+
+> O frontend **detecta o backend automaticamente** (via `/auth/status`) e roteia
+> as chamadas pelo proxy `/api`, sem expor o token no navegador.
+
+## Modo alternativo: sem backend (token manual)
+
+Dá para abrir o `index.html` direto / por um servidor estático. As categorias
+carregam, mas a **busca exige token** — gere um Access Token (`APP_USR-…`) e cole
+em ⚙️ **Configurações**. Ele vale ~6h e fica salvo só no seu navegador.
+
+Use o botão **🔌 Testar conexão** (em ⚙️ Configurações) para checar o status
+exato de cada endpoint (categorias e busca).
 
 ## A planilha gerada (4 abas)
 
@@ -43,37 +71,40 @@ Em `assets/js/api.js`:
 
 Se você ver **HTTP 429**, reduza o "req/s" em Configurações.
 
-## Autenticação (Access Token)
+## Como o OAuth funciona (backend)
 
-A API do Mercado Livre exige **OAuth** em vários endpoints. Se a busca falhar
-com **401/403**, gere um token e cole em ⚙️ **Configurações** (fica salvo só no
-seu navegador, em `localStorage`):
+`server.js` faz o fluxo *Authorization Code*:
 
-1. Crie uma aplicação em <https://developers.mercadolivre.com.br/devcenter>.
-2. Siga o fluxo OAuth para obter um `access_token` (formato `APP_USR-...`).
-3. Cole o token no campo **Access Token**.
+1. **`/auth/login`** → redireciona para a tela de autorização do Mercado Livre.
+2. **`/auth/callback`** → troca o `code` por `access_token` + `refresh_token`,
+   salvos em `tokens.json` (ignorado pelo git).
+3. **`/api/*`** → proxy para `https://api.mercadolibre.com/*`, injetando o
+   `Authorization: Bearer`. Se o token estiver perto de expirar, o servidor o
+   **renova automaticamente** via `refresh_token` antes de repassar a chamada.
 
-> Endpoints de **categorias** (`/sites/MLB/categories`, `/categories/{id}`)
-> normalmente são públicos; a **busca** (`/sites/MLB/search`) pode exigir token
-> dependendo da política atual da API.
+As credenciais (`.env`) e os tokens (`tokens.json`) **ficam só no servidor** —
+o navegador nunca os vê.
 
 ## Estrutura
 
 ```
+server.js          # backend mínimo: OAuth + proxy + arquivos estáticos
+.env.example       # modelo de credenciais (copie para .env)
+package.json
 index.html
 assets/
   css/styles.css
   js/
-    api.js        # cliente da API + rate limiter + retry
+    api.js        # cliente da API + rate limiter + retry + detecção de backend
     analysis.js   # tratamento e métricas dos dados
     export.js     # geração do .xlsx (SheetJS)
-    app.js        # interface, navegação de categorias, fluxo
+    app.js        # interface, navegação de categorias, fluxo, login
 ```
 
 ## Dependências
 
-- [SheetJS](https://sheetjs.com/) carregado via CDN (geração do `.xlsx` no
-  navegador). Sem outras dependências, sem build.
+- **Backend:** nenhuma. Só Node 18+ (usa `fetch` nativo), sem `npm install`.
+- **Frontend:** [SheetJS](https://sheetjs.com/) via CDN, para gerar o `.xlsx`.
 
 ## Observações
 
