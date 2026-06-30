@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "Análise de Mercado · Mercado Livre",
+  "version": "1.0.0",
+  "description": "Pesquisa de mercado no Mercado Livre: filtra por categoria e gera planilha .xlsx. Roda no seu navegador (sem servidor).",
+  "host_permissions": [
+    "*://*.mercadolivre.com.br/*",
+    "*://*.mercadolibre.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "Análise de Mercado"
+  }
+}

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Análise de Mercado · Mercado Livre</title>
+  <link rel="stylesheet" href="assets/css/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">📊</span>
+      <div>
+        <h1>Análise de Mercado</h1>
+        <p>Mercado Livre · roda no seu navegador</p>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="card auth-banner ok">
+      ✅ <strong>Extensão ativa.</strong> Os dados são lidos pelo seu próprio navegador
+      (sua conexão), então o Mercado Livre não bloqueia como faria com um servidor.
+    </section>
+
+    <section class="card">
+      <h2>1. Escolha o que analisar</h2>
+      <div id="category-path" class="cat-path"></div>
+      <div id="category-loading" class="muted">Carregando categorias…</div>
+
+      <div class="grid-2">
+        <label>
+          Palavra-chave (recomendado)
+          <input id="query" type="text" placeholder="ex.: fone bluetooth" />
+        </label>
+        <label>
+          Quantidade de anúncios
+          <select id="sample-size">
+            <option value="50">50 (rápido)</option>
+            <option value="100" selected>100</option>
+            <option value="200">200</option>
+            <option value="500">500 (mais lento)</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="row-end">
+        <button id="btn-run" class="primary" type="button">🔎 Analisar mercado</button>
+      </div>
+      <p class="muted" style="margin:10px 0 0">
+        Dica: a raspagem vai melhor com <strong>palavra-chave</strong>. A categoria sozinha
+        também funciona, mas com menos precisão.
+      </p>
+    </section>
+
+    <section id="progress-card" class="card hidden">
+      <h2>Coletando dados…</h2>
+      <div class="progress"><div id="progress-bar" class="progress-bar"></div></div>
+      <p id="progress-text" class="muted"></p>
+    </section>
+
+    <section id="error-card" class="card error hidden">
+      <h2>Não foi possível concluir</h2>
+      <p id="error-text"></p>
+    </section>
+
+    <section id="result-card" class="card hidden">
+      <div class="row-between">
+        <h2>2. Resultado da análise</h2>
+        <button id="btn-export" class="primary" type="button">⬇️ Baixar planilha (.xlsx)</button>
+      </div>
+      <p id="result-subtitle" class="muted"></p>
+      <div id="summary-cards" class="summary-grid"></div>
+
+      <h3>Prévia dos anúncios</h3>
+      <div class="table-wrap">
+        <table id="preview-table"><thead></thead><tbody></tbody></table>
+      </div>
+      <p id="preview-note" class="muted"></p>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>Dados públicos do Mercado Livre · Lidos pelo seu navegador, com pausa entre páginas.</p>
+  </footer>
+
+  <script src="vendor/xlsx.full.min.js"></script>
+  <script src="scrape.js"></script>
+  <script src="assets/js/analysis.js"></script>
+  <script src="assets/js/export.js"></script>
+  <script src="assets/js/app-ext.js"></script>
+</body>
+</html>
