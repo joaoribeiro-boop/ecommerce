@@ -115,7 +115,21 @@ function parseItems(html) {
     if (!title) continue; // sem título, não é um card válido
 
     const { price, original } = extractPrices(chunk);
+
+    // Frete: texto completo (ex.: "Frete grátis") + flag.
     const freeShipping = /Frete\s*gr[áa]tis/i.test(chunk);
+    let shippingText = "";
+    const shm = chunk.match(/poly-component__shipping[^>]*>([\s\S]*?)<\/[^>]+>/);
+    if (shm) shippingText = stripTags(shm[1]);
+    if (!shippingText && freeShipping) shippingText = "Frete grátis";
+
+    // Condições de pagamento (parcelas), ex.: "em 12x R$ 99,90 sem juros".
+    let payment = "";
+    const pm =
+      chunk.match(/poly-(?:price__installments|component__installments)[^>]*>([\s\S]*?)<\/[^>]+>/) ||
+      chunk.match(/(em\s+\d+\s*x[^<]{0,60})/i);
+    if (pm) payment = stripTags(pm[1]);
+
     let seller = "";
     const sm = chunk.match(/poly-component__seller[^>]*>([\s\S]*?)<\/[^>]+>/);
     if (sm) seller = stripTags(sm[1]).replace(/^por\s+/i, "");
@@ -135,6 +149,8 @@ function parseItems(html) {
       sold_quantity: 0,
       available_quantity: 0,
       shipping: { free_shipping: freeShipping },
+      shipping_text: shippingText,
+      installments: payment ? { text: payment } : null,
       listing_type_id: "",
       seller: { id: "", nickname: seller },
       address: {},

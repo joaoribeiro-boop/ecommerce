@@ -57,9 +57,13 @@ const Analysis = (function () {
       Condicao: it.condition === "new" ? "Novo" : it.condition === "used" ? "Usado" : (it.condition || ""),
       QtdVendida: num(it.sold_quantity),
       QtdDisponivel: num(it.available_quantity),
+      Frete: it.shipping_text || (ship.free_shipping ? "Frete grátis" : ""),
       FreteGratis: ship.free_shipping ? "Sim" : "Não",
       FullDoML: (ship.logistic_type === "fulfillment") ? "Sim" : "Não",
       TipoAnuncio: LISTING_LABELS[it.listing_type_id] || it.listing_type_id || "",
+      CondicoesPagamento: (installments && installments.text)
+        ? installments.text
+        : (installments.quantity ? `${installments.quantity}x` : ""),
       Parcelas: installments.quantity ? `${installments.quantity}x` : "",
       Vendedor: seller.nickname || (seller.id ? `#${seller.id}` : ""),
       VendedorID: seller.id || "",

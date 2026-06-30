@@ -69,9 +69,8 @@ const Exporter = (function () {
     XLSX.utils.book_append_sheet(wb, summarySheet(analysis.summary), "Resumo");
 
     const itemHeaders = [
-      "ID", "Titulo", "Preco", "PrecoOriginal", "Moeda", "Condicao",
-      "QtdVendida", "QtdDisponivel", "FreteGratis", "FullDoML", "TipoAnuncio",
-      "Parcelas", "Vendedor", "UF", "Cidade", "Catalogo", "ReceitaEstimada", "Link",
+      "Titulo", "Preco", "CondicoesPagamento", "Frete", "Link",
+      "PrecoOriginal", "FreteGratis", "Vendedor", "Catalogo", "ID",
     ];
     XLSX.utils.book_append_sheet(
       wb, sheetFromObjects(analysis.rows, itemHeaders), "Anúncios"
