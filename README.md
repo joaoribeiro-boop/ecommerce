@@ -28,6 +28,11 @@ cp .env.example .env
 node server.js
 # ou: npm start
 ```
+
+**No Mac:** dê **duplo-clique** em `start-mac.command` (ele sobe o servidor e abre
+o navegador sozinho). Na primeira vez, se o macOS bloquear, clique com o botão
+direito → **Abrir**. Requer Node instalado (<https://nodejs.org>, versão LTS).
+
 Abra <http://localhost:3000>, clique em **“Conectar ao Mercado Livre”**, autorize,
 e pronto — o token passa a ser renovado automaticamente.
 
