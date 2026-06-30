@@ -1,6 +1,10 @@
 # Credenciais e tokens — NUNCA commitar
 .env
 tokens.json
+app-credentials.js
+
+# Build do app desktop
+dist/
 
 # Node
 node_modules/

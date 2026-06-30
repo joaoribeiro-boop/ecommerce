@@ -1,13 +1,42 @@
 {
   "name": "analise-mercado-ml",
   "version": "1.0.0",
-  "description": "Agente de análise de mercado via API do Mercado Livre, com backend mínimo para OAuth e geração de planilha .xlsx.",
-  "main": "server.js",
+  "description": "Análise de mercado via API do Mercado Livre, com app desktop (Electron), OAuth e geração de planilha .xlsx.",
+  "main": "electron/main.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "electron": "electron .",
+    "dist": "electron-builder --mac",
+    "dist:dir": "electron-builder --dir"
   },
   "engines": {
     "node": ">=18"
+  },
+  "devDependencies": {
+    "electron": "^31.0.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.analisemercado.ml",
+    "productName": "Análise de Mercado",
+    "asar": true,
+    "files": [
+      "electron/**",
+      "server.js",
+      "index.html",
+      "assets/**",
+      "app-credentials.js"
+    ],
+    "mac": {
+      "category": "public.app-category.business",
+      "target": [
+        "dmg",
+        "zip"
+      ]
+    },
+    "directories": {
+      "output": "dist"
+    }
   },
   "license": "MIT"
 }

@@ -5,11 +5,34 @@ limite de requisições para evitar bloqueio, e gera uma **planilha tratada
 (.xlsx)** filtrada por categoria.
 
 > ⚠️ **A API do Mercado Livre acabou com a busca anônima.** O endpoint de busca
-> exige autenticação (OAuth). Por isso o projeto inclui um **backend mínimo**
-> (1 arquivo Node, sem dependências) que cuida do login e renova o token
-> sozinho. As categorias são públicas; só a busca precisa do token.
+> exige autenticação (OAuth). Por isso o app embute um servidor que cuida do
+> login e renova o token sozinho. As categorias são públicas; só a busca precisa
+> do token.
 
-## Modo recomendado: com backend (token automático)
+Há **três formas** de usar (mesma base de código):
+
+1. **App desktop (macOS)** — empacotado com Electron, para distribuir ao time.
+   👉 veja [DESKTOP.md](DESKTOP.md).
+2. **Servidor local** (navegador + `node server.js`) — para desenvolver/testar.
+3. **Sem backend** (token manual no navegador) — alternativa simples.
+
+---
+
+## App desktop (macOS) — para compartilhar com o time
+
+O app roda um servidor interno em `localhost`, faz o OAuth do Mercado Livre
+(localhost dispensa https), guarda o token **localmente em cada máquina** e pode
+exigir **senha** na abertura. Como cada instalação faz a própria autorização,
+todos podem usar a **mesma conta do Mercado Livre** sem um derrubar o token do
+outro.
+
+- **Como gerar e distribuir o `.app`/`.dmg`:** veja **[DESKTOP.md](DESKTOP.md)**.
+- ⚠️ O `Client Secret` fica embutido no app — use só para **distribuição
+  interna** (time confiável), nunca público.
+
+---
+
+## Modo desenvolvedor: servidor local (token automático)
 
 ### 1. Crie sua aplicação no Mercado Livre
 1. Acesse <https://developers.mercadolivre.com.br/devcenter> e crie uma aplicação.
