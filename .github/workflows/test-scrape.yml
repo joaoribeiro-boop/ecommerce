@@ -1,0 +1,24 @@
+name: Testar Raspagem (diagnóstico)
+
+# Roda manualmente pela aba Actions do GitHub. Serve para verificar se é
+# possível raspar o Mercado Livre a partir de um servidor na nuvem.
+on:
+  workflow_dispatch:
+    inputs:
+      query:
+        description: "Palavra-chave para testar"
+        required: true
+        default: "fone bluetooth"
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Rodar diagnóstico de raspagem
+        env:
+          Q: ${{ inputs.query }}
+        run: node scripts/scrape-debug.js
