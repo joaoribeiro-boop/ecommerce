@@ -4,17 +4,44 @@ Agente de pesquisa de mercado que bate na **API do Mercado Livre**, respeita o
 limite de requisições para evitar bloqueio, e gera uma **planilha tratada
 (.xlsx)** filtrada por categoria.
 
-> ⚠️ **A API do Mercado Livre acabou com a busca anônima.** O endpoint de busca
-> exige autenticação (OAuth). Por isso o app embute um servidor que cuida do
-> login e renova o token sozinho. As categorias são públicas; só a busca precisa
-> do token.
+> ⚠️ **O Mercado Livre bloqueou a busca via API** (`/sites/MLB/search` retorna
+> 403 mesmo com token válido — restrição de política da plataforma). Por isso o
+> app usa **raspagem das páginas públicas** do Mercado Livre para listar os
+> anúncios. **Não precisa de token nem de login.** As categorias continuam vindo
+> da API pública.
 
-Há **três formas** de usar (mesma base de código):
+## Como rodar (modo raspagem — recomendado)
 
-1. **App desktop (macOS)** — empacotado com Electron, para distribuir ao time.
-   👉 veja [DESKTOP.md](DESKTOP.md).
-2. **Servidor local** (navegador + `node server.js`) — para desenvolver/testar.
-3. **Sem backend** (token manual no navegador) — alternativa simples.
+```bash
+node server.js          # ou npm start
+```
+Abra <http://localhost:3000>. Escolha a categoria, **digite uma palavra-chave**
+(a raspagem funciona melhor com palavra-chave), clique em **Analisar mercado** e
+depois em **Baixar planilha (.xlsx)**.
+
+> Não precisa de `.env` nem de credenciais do ML para a raspagem.
+
+### Se der erro / vier vazio (diagnóstico)
+
+O HTML do Mercado Livre muda com o tempo. Para conferir o que está chegando,
+abra no navegador (ajuste a palavra-chave):
+
+```
+http://localhost:3000/scrape/debug?q=fone%20bluetooth
+```
+
+Isso mostra status, se foi bloqueado (anti-bot), quantos anúncios o parser
+encontrou e uma amostra do HTML — útil para reajustar o parser em
+[`scrape.js`](scrape.js).
+
+### Limites e cuidados da raspagem
+
+- **Anti-bot:** rodar da sua máquina (IP residencial/empresa) ajuda. Há um
+  intervalo entre páginas para não ser barrado; se vier bloqueio (403/429),
+  espere alguns minutos e reduza a quantidade.
+- **Dados:** vêm título, preço, link, frete grátis e (quando disponível)
+  vendedor. Campos como quantidade vendida e condição não aparecem na listagem.
+- **ToS:** é uma zona cinzenta dos Termos de Uso; use para pesquisa interna.
 
 ---
 

@@ -103,7 +103,10 @@
     el.classList.remove("hidden");
     let msg;
     if (err instanceof ML.MLError) {
-      if (err.kind === "network") {
+      if (err.kind === "blocked") {
+        msg = "O Mercado Livre bloqueou a raspagem (anti-bot). Espere alguns minutos e tente de novo, " +
+          "reduza a quantidade de anúncios, ou diminua a frequência. Detalhe: " + err.detail;
+      } else if (err.kind === "network") {
         msg = "Falha de rede ou bloqueio de CORS ao chamar a API. " +
           "Verifique sua conexão. Se persistir, a API pode exigir um Access Token (⚙️ Configurações).";
       } else if (err.status === 401 || err.status === 403) {
@@ -239,7 +242,19 @@
         condition,
         sort,
       };
-      const { total, results } = await ML.collect(site, q, target, setProgress);
+
+      let total, results;
+      if (ML.config.useProxy) {
+        // Modo raspagem (a API de busca do ML está bloqueada).
+        $("progress-text").textContent =
+          "Raspando páginas do Mercado Livre… isso pode levar alguns segundos.";
+        ({ total, results } = await ML.searchScrape(q, target, setProgress));
+      } else {
+        // Sem backend não é possível raspar (CORS).
+        throw new Error(
+          "O modo raspagem precisa do servidor local. Rode 'node server.js' e abra http://localhost:3000."
+        );
+      }
 
       if (!results.length) {
         throw new Error("Nenhum anúncio encontrado para esses filtros.");
@@ -319,24 +334,15 @@
   }
 
   /* ---------- Bind de eventos ---------- */
-  function renderAuthBanner(status) {
+  function renderAuthBanner() {
+    // A busca via API do ML foi bloqueada (403); usamos raspagem do site
+    // público, que não exige token nem login.
     const el = $("auth-banner");
     el.classList.remove("hidden");
-    if (!status.hasCredentials) {
-      el.classList.add("warn");
-      el.innerHTML = "⚠️ <strong>Backend ativo, mas sem credenciais.</strong> " +
-        "Crie um arquivo <code>.env</code> com <code>ML_CLIENT_ID</code> e <code>ML_CLIENT_SECRET</code> " +
-        "(veja o <code>.env.example</code> e o README) e reinicie o servidor.";
-    } else if (!status.authenticated) {
-      el.innerHTML =
-        "<div class='row-between'><span>🔌 <strong>Backend ativo.</strong> Conecte sua conta do Mercado Livre para liberar a busca.</span>" +
-        "<a class='btn-link' href='/auth/login'>Conectar ao Mercado Livre →</a></div>";
-    } else {
-      el.classList.add("ok");
-      el.innerHTML =
-        "<div class='row-between'><span>✅ <strong>Conectado ao Mercado Livre.</strong> O token é renovado automaticamente.</span>" +
-        "<a class='btn-link muted-link' href='/auth/logout'>Sair</a></div>";
-    }
+    el.classList.add("ok");
+    el.innerHTML =
+      "✅ <strong>Modo raspagem ativo</strong> (sem token). As categorias vêm da API pública " +
+      "e os anúncios são lidos das páginas do Mercado Livre.";
   }
 
   async function init() {
@@ -351,8 +357,8 @@
     // Detecta o backend antes de chamar a API.
     const backend = await ML.detectBackend();
     if (backend) {
-      renderAuthBanner(backend);
-      // No modo backend o token é gerenciado pelo servidor: oculta o campo manual.
+      renderAuthBanner();
+      // No modo backend/raspagem não há token manual: oculta o campo.
       const tokenLabel = $("token").closest("label");
       if (tokenLabel) tokenLabel.classList.add("hidden");
     }

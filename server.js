@@ -26,6 +26,7 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
+const scrape = require("./scrape.js");
 
 // ---------- .env (parser simples) ----------
 function loadEnv() {
@@ -287,6 +288,34 @@ async function handle(req, res) {
   if (p === "/auth/logout") {
     try { fs.unlinkSync(TOKENS_FILE); } catch (_) {}
     return redirect(res, "/");
+  }
+
+  // Raspagem do site público (sem token) — substitui a busca da API.
+  if (p === "/scrape/search") {
+    const query = url.searchParams.get("q") || "";
+    const categoryId = url.searchParams.get("category") || "";
+    const target = Math.min(parseInt(url.searchParams.get("target") || "200", 10) || 200, 1000);
+    if (!query && !categoryId) return sendJSON(res, 400, { error: "missing_query" });
+    try {
+      const out = await scrape.scrapeSearch({ query, categoryId, target });
+      return sendJSON(res, 200, out);
+    } catch (e) {
+      return sendJSON(res, e.blocked ? 403 : 502, {
+        error: e.blocked ? "blocked" : "scrape_error",
+        message: e.message, url: e.url,
+      });
+    }
+  }
+
+  // Diagnóstico da raspagem (abra no navegador e me mande o resultado).
+  if (p === "/scrape/debug") {
+    const query = url.searchParams.get("q") || "";
+    const categoryId = url.searchParams.get("category") || "";
+    try {
+      return sendJSON(res, 200, await scrape.debug({ query, categoryId }));
+    } catch (e) {
+      return sendJSON(res, 502, { error: "scrape_error", message: e.message });
+    }
   }
 
   // Proxy.

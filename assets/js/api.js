@@ -168,10 +168,32 @@ const ML = (function () {
     return { total: total || results.length, results };
   }
 
+  /* Coleta via raspagem do site público (somente com backend). Retorna
+   * { total, results } no mesmo formato da API. */
+  async function searchScrape(query, target, onProgress) {
+    const root = typeof location !== "undefined" ? location.href : "http://localhost";
+    const url = new URL("/scrape/search", root);
+    if (query.category) url.searchParams.set("category", query.category);
+    if (query.q) url.searchParams.set("q", query.q);
+    url.searchParams.set("target", target);
+    if (onProgress) onProgress(0, target);
+
+    const res = await fetch(url.toString(), { headers: { Accept: "application/json" } });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const kind = data.error === "blocked" ? "blocked" : "http";
+      throw new MLError(res.status, kind, data.message || "Falha na raspagem");
+    }
+    const n = (data.results || []).length;
+    if (onProgress) onProgress(n, n);
+    return data;
+  }
+
   return {
     config,
     MLError,
     detectBackend,
+    searchScrape,
     categories,
     category,
     searchPage,
