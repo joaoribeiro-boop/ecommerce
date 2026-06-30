@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Análise de Mercado</title>
+  <link rel="stylesheet" href="assets/css/styles.css" />
+  <style>
+    body { width: 460px; }
+    .container { margin: 14px auto; }
+    .card { padding: 16px; margin-bottom: 14px; }
+    .steps { font-size: 13px; color: var(--muted); margin: 0 0 12px; padding-left: 18px; }
+    .steps li { margin: 3px 0; }
+    #status { font-size: 13px; margin: 12px 0 0; }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">📊</span>
+      <div>
+        <h1>Análise de Mercado</h1>
+        <p>Lê a busca aberta no Mercado Livre</p>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="card">
+      <ol class="steps">
+        <li>Abra <strong>mercadolivre.com.br</strong> e faça a busca (categoria ou palavra-chave).</li>
+        <li>Com a página de resultados aberta, clique em <strong>Analisar</strong> abaixo.</li>
+      </ol>
+
+      <label>
+        Quantidade de anúncios
+        <select id="qty">
+          <option value="50" selected>~50 (só a 1ª página, instantâneo)</option>
+          <option value="100">~100</option>
+          <option value="200">~200</option>
+          <option value="500">~500 (mais lento)</option>
+        </select>
+      </label>
+
+      <div class="row-end" style="gap:8px">
+        <button id="btn-debug" class="ghost-dark" type="button">🔧 Diagnóstico</button>
+        <button id="btn-run" class="primary" type="button">🔎 Analisar</button>
+      </div>
+
+      <p id="status" class="muted"></p>
+
+      <div class="row-end" style="margin-top:8px">
+        <button id="btn-export" class="primary hidden" type="button">⬇️ Baixar planilha (.xlsx)</button>
+      </div>
+
+      <textarea id="debug-out" class="hidden" readonly
+        style="width:100%;height:200px;margin-top:12px;font-family:monospace;font-size:11px;
+        border:1px solid var(--border);border-radius:8px;padding:8px"></textarea>
+    </section>
+  </main>
+
+  <script src="vendor/xlsx.full.min.js"></script>
+  <script src="assets/js/analysis.js"></script>
+  <script src="assets/js/export.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
