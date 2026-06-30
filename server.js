@@ -54,6 +54,19 @@ function writeTokens(t) {
   fs.writeFileSync(TOKENS_FILE, JSON.stringify(t, null, 2));
 }
 
+// ---------- PKCE ----------
+// O Mercado Livre exige PKCE no fluxo de autorização. Geramos um
+// code_verifier no /auth/login e o usamos no /auth/callback.
+function base64url(buf) {
+  return buf.toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+let pendingVerifier = null; // single-user local: guardar em memória basta
+function newPkce() {
+  const verifier = base64url(crypto.randomBytes(32));
+  const challenge = base64url(crypto.createHash("sha256").update(verifier).digest());
+  return { verifier, challenge };
+}
+
 // Troca authorization_code OU refresh_token por novos tokens.
 async function requestToken(params) {
   const body = new URLSearchParams({
@@ -173,10 +186,14 @@ const server = http.createServer(async (req, res) => {
   // Inicia o login OAuth.
   if (p === "/auth/login") {
     if (!CLIENT_ID) { res.writeHead(500); return res.end("ML_CLIENT_ID não configurado no .env"); }
+    const pkce = newPkce();
+    pendingVerifier = pkce.verifier;
     const authUrl = `https://${AUTH_DOMAIN}/authorization?` + new URLSearchParams({
       response_type: "code",
       client_id: CLIENT_ID,
       redirect_uri: REDIRECT_URI,
+      code_challenge: pkce.challenge,
+      code_challenge_method: "S256",
     });
     return redirect(res, authUrl);
   }
@@ -188,7 +205,10 @@ const server = http.createServer(async (req, res) => {
     if (error) { res.writeHead(400); return res.end("Erro no login: " + error); }
     if (!code) { res.writeHead(400); return res.end("Faltou o parâmetro 'code'."); }
     try {
-      await requestToken({ grant_type: "authorization_code", code, redirect_uri: REDIRECT_URI });
+      const params = { grant_type: "authorization_code", code, redirect_uri: REDIRECT_URI };
+      if (pendingVerifier) params.code_verifier = pendingVerifier;
+      await requestToken(params);
+      pendingVerifier = null;
       return redirect(res, "/?logged_in=1");
     } catch (e) {
       res.writeHead(500);
