@@ -45,8 +45,12 @@
       </div>
 
       <div class="row-end">
+        <button id="btn-debug" class="ghost-dark" type="button">🔧 Diagnóstico</button>
         <button id="btn-run" class="primary" type="button">🔎 Analisar mercado</button>
       </div>
+      <textarea id="debug-out" class="hidden" readonly
+        style="width:100%;height:220px;margin-top:12px;font-family:monospace;font-size:12px;
+        border:1px solid var(--border);border-radius:8px;padding:10px"></textarea>
       <p class="muted" style="margin:10px 0 0">
         Dica: a raspagem vai melhor com <strong>palavra-chave</strong>. A categoria sozinha
         também funciona, mas com menos precisão.

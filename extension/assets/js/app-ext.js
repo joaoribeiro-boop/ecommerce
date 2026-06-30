@@ -195,9 +195,24 @@
     Exporter.download(state.lastAnalysis, `analise_${slug}_${stamp}.xlsx`);
   }
 
+  async function runDebug() {
+    const out = $("debug-out");
+    out.classList.remove("hidden");
+    out.value = "Rodando diagnóstico…";
+    const query = $("query").value.trim();
+    try {
+      const r = await MLScrape.debug({ query, categoryId: state.selected ? state.selected.id : "" });
+      out.value = JSON.stringify(r, null, 2);
+      out.focus(); out.select();
+    } catch (e) {
+      out.value = "ERRO no diagnóstico: " + (e.message || String(e));
+    }
+  }
+
   document.addEventListener("DOMContentLoaded", () => {
     $("btn-run").addEventListener("click", run);
     $("btn-export").addEventListener("click", exportXlsx);
+    $("btn-debug").addEventListener("click", runDebug);
     initCategories();
   });
 })();

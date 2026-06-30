@@ -201,6 +201,22 @@ async function debug({ query, categoryId }) {
   const url = buildSearchUrl({ query, categoryId, desde: 1 });
   const { status, html, finalUrl } = await fetchHtml(url);
   const { items, mode } = parseItems(html);
+
+  // Conta marcadores conhecidos para descobrir quais classes o ML usa hoje.
+  const keys = [
+    "poly-card", "poly-component__title", "poly-price",
+    "ui-search-layout__item", "ui-search-result", "ui-search-item__title",
+    "andes-money-amount__fraction", "andes-money-amount",
+    "ui-search-result__content", "results-item", "data-testid",
+  ];
+  const markers = {};
+  keys.forEach((k) => { markers[k] = html.split(k).length - 1; });
+
+  // Trecho ao redor do primeiro preço (mostra a estrutura real do card).
+  let priceSnippet = "";
+  const idx = html.indexOf("andes-money-amount__fraction");
+  if (idx > -1) priceSnippet = html.slice(Math.max(0, idx - 500), idx + 300);
+
   return {
     url, finalUrl, status,
     blocked: looksBlocked(status, html, finalUrl),
@@ -208,8 +224,10 @@ async function debug({ query, categoryId }) {
     parserMode: mode,
     totalParsed: items.length,
     totalText: parseTotal(html),
-    firstItems: items.slice(0, 3),
-    htmlSample: html.slice(0, 1500),
+    markers,
+    priceSnippet,
+    firstItems: items.slice(0, 2),
+    headSample: html.slice(0, 500),
   };
 }
 
