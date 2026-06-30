@@ -1,0 +1,16 @@
+# Blueprint de deploy no Render (https://render.com)
+# Sobe o app como um serviço web com link https e senha de acesso.
+# Como o app não tem dependências de runtime, o build é instantâneo
+# (--omit=dev evita baixar Electron, que é só para o app desktop).
+
+services:
+  - type: web
+    name: analise-mercado-ml
+    runtime: node
+    plan: free
+    buildCommand: npm install --omit=dev
+    startCommand: node server.js
+    envVars:
+      # Senha de acesso ao app (defina o valor no painel do Render).
+      - key: APP_PASSWORD
+        sync: false
