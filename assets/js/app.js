@@ -18,7 +18,14 @@
     path: [],            // [{id, name}]
     selected: null,      // {id, name} categoria escolhida para análise
     lastAnalysis: null,  // resultado para exportar
+    lastMeta: null,      // fonte dos dados / avisos da última coleta
   };
+
+  // Habilita o botão quando há palavra-chave OU categoria selecionada.
+  function refreshRunButton() {
+    const hasQuery = $("query").value.trim().length > 0;
+    $("btn-run").disabled = !(hasQuery || state.selected);
+  }
 
   /* ---------- Configurações (localStorage) ---------- */
   function loadSettings() {
@@ -130,7 +137,7 @@
   async function initCategories() {
     state.path = [];
     state.selected = null;
-    $("btn-run").disabled = true;
+    refreshRunButton();
     $("category-loading").classList.remove("hidden");
     $("category-loading").textContent = "Carregando categorias…";
     $("category-path").innerHTML = "";
@@ -142,8 +149,9 @@
       renderCategorySelect(cats, true);
       $("category-loading").classList.add("hidden");
     } catch (err) {
-      $("category-loading").classList.add("hidden");
-      showError(err);
+      // Categoria é opcional: não bloqueia a pesquisa por título.
+      $("category-loading").textContent =
+        "Não foi possível carregar as categorias (tudo bem — pesquise só pelo título).";
     }
   }
 
@@ -194,7 +202,7 @@
 
     state.path.push({ id, name });
     state.selected = { id, name };
-    $("btn-run").disabled = false; // já dá pra analisar este nível
+    refreshRunButton(); // já dá pra analisar este nível
 
     // Busca subcategorias (filhas) para permitir aprofundar.
     $("category-loading").classList.remove("hidden");
@@ -243,16 +251,21 @@
         sort,
       };
 
-      let total, results;
+      let total, results, source = "", enriched = false, warnings = [];
       if (ML.config.useProxy) {
-        // Modo raspagem (a API de busca do ML está bloqueada).
+        // Insights via backend: API oficial (token da aplicação) e, se a
+        // busca oficial não estiver liberada, raspagem + API de itens.
         $("progress-text").textContent =
-          "Raspando páginas do Mercado Livre… isso pode levar alguns segundos.";
-        ({ total, results } = await ML.searchScrape(q, target, setProgress));
+          "Consultando o Mercado Livre… isso pode levar alguns segundos.";
+        const data = await ML.searchInsights({ ...q, site }, target, setProgress);
+        ({ total, results } = data);
+        source = data.source || "";
+        enriched = Boolean(data.enriched);
+        warnings = data.warnings || [];
       } else {
-        // Sem backend não é possível raspar (CORS).
+        // Sem backend não há como buscar (CORS / token).
         throw new Error(
-          "O modo raspagem precisa do servidor local. Rode 'node server.js' e abra http://localhost:3000."
+          "A análise precisa do servidor local. Rode 'node server.js' e abra http://localhost:3000."
         );
       }
 
@@ -271,6 +284,7 @@
 
       const analysis = Analysis.run(meta, results);
       state.lastAnalysis = analysis;
+      state.lastMeta = { source, enriched, warnings };
       renderResult(analysis);
     } catch (err) {
       showError(err);
@@ -294,34 +308,46 @@
       `${s.AnunciosAnalisados} anúncios analisados de ${Number(s.TotalNaCategoria).toLocaleString("pt-BR")} no total.`;
 
     $("summary-cards").innerHTML = [
-      metric(Number(s.TotalNaCategoria).toLocaleString("pt-BR"), "Total na categoria"),
+      metric(Number(s.TotalNaCategoria).toLocaleString("pt-BR"), "Total encontrado"),
       metric(brl(s.PrecoMedio), "Preço médio"),
       metric(brl(s.PrecoMediano), "Preço mediano"),
       metric(brl(s.PrecoMinimo), "Preço mínimo"),
       metric(brl(s.PrecoMaximo), "Preço máximo"),
-      metric(s.FreteGratisPct + "%", "Frete grátis"),
-      metric(s.FullDoMLPct + "%", "Full do ML"),
-      metric(s.Novos + " / " + s.Usados, "Novos / Usados"),
       metric(Number(s.VendasSomadas).toLocaleString("pt-BR"), "Vendas somadas"),
+      metric(brl(s.ReceitaEstimadaTotal), "Receita estimada"),
+      metric(s.FreteGratisPct + "%", "Frete grátis"),
+      metric(s.Novos + " / " + s.Usados, "Novos / Usados"),
     ].join("");
 
     // Prévia (até 50 linhas).
-    const cols = ["Titulo", "Preco", "Condicao", "FreteGratis", "QtdVendida", "Vendedor", "UF"];
+    const numCols = ["Preco", "QtdVendida", "ReceitaEstimada"];
+    const cols = ["Titulo", "Preco", "QtdVendida", "ReceitaEstimada", "Condicao", "FreteGratis", "Vendedor"];
     const head = $("preview-table").querySelector("thead");
     const body = $("preview-table").querySelector("tbody");
-    head.innerHTML = "<tr>" + cols.map((c) => `<th class="${c === "Preco" || c === "QtdVendida" ? "num" : ""}">${c}</th>`).join("") + "</tr>";
+    head.innerHTML = "<tr>" + cols.map((c) => `<th class="${numCols.includes(c) ? "num" : ""}">${c}</th>`).join("") + "</tr>";
     const preview = a.rows.slice(0, 50);
     body.innerHTML = preview.map((r) =>
       "<tr>" + cols.map((c) => {
         let v = r[c];
-        if (c === "Preco") v = brl(v);
-        const cls = (c === "Preco" || c === "QtdVendida") ? "num" : "";
+        if (c === "Preco" || c === "ReceitaEstimada") v = brl(v);
+        const cls = numCols.includes(c) ? "num" : "";
         return `<td class="${cls}">${String(v ?? "").replace(/</g, "&lt;")}</td>`;
       }).join("") + "</tr>"
     ).join("");
 
-    $("preview-note").textContent =
-      `Mostrando ${preview.length} de ${a.rows.length} linhas. A planilha completa tem 4 abas (Resumo, Anúncios, Vendedores, Faixas de preço).`;
+    // Nota sobre a fonte dos dados + avisos do backend.
+    const m = state.lastMeta || {};
+    const SOURCE_LABEL = {
+      "api": "Fonte: busca oficial da API do Mercado Livre (nº de vendas oficial).",
+      "scrape+api": "Fonte: páginas públicas do Mercado Livre + API oficial de itens (nº de vendas oficial).",
+      "scrape": "Fonte: páginas públicas do Mercado Livre — sem nº de vendas. Conecte sua aplicação para habilitar.",
+    };
+    const notes = [
+      `Mostrando ${preview.length} de ${a.rows.length} linhas. A planilha completa tem 4 abas (Resumo, Anúncios, Vendedores, Faixas de preço).`,
+      SOURCE_LABEL[m.source] || "",
+      ...(m.warnings || []).map((w) => "⚠️ " + w),
+    ].filter(Boolean);
+    $("preview-note").innerHTML = notes.map((n) => String(n).replace(/</g, "&lt;")).join("<br>");
   }
 
   function exportXlsx() {
@@ -334,15 +360,31 @@
   }
 
   /* ---------- Bind de eventos ---------- */
-  function renderAuthBanner() {
-    // A busca via API do ML foi bloqueada (403); usamos raspagem do site
-    // público, que não exige token nem login.
+  function renderAuthBanner(status) {
     const el = $("auth-banner");
-    el.classList.remove("hidden");
+    el.classList.remove("hidden", "ok", "warn");
+
+    if (!status.hasCredentials) {
+      el.classList.add("warn");
+      el.innerHTML =
+        "⚠️ <strong>Credenciais da aplicação não configuradas.</strong> " +
+        "Copie <code>.env.example</code> para <code>.env</code>, preencha <code>ML_CLIENT_ID</code> e " +
+        "<code>ML_CLIENT_SECRET</code> da sua aplicação e reinicie o servidor. " +
+        "Sem isso a análise roda só por raspagem, <strong>sem nº de vendas</strong>.";
+      return;
+    }
+    if (!status.authenticated) {
+      el.classList.add("warn");
+      el.innerHTML =
+        "🔑 <strong>Conecte sua aplicação do Mercado Livre</strong> para trazer o " +
+        "<strong>nº de vendas</strong> e os dados oficiais dos anúncios. " +
+        '<div style="margin-top:10px"><a class="btn-link" href="/auth/login">Conectar ao Mercado Livre</a></div>';
+      return;
+    }
     el.classList.add("ok");
     el.innerHTML =
-      "✅ <strong>Modo raspagem ativo</strong> (sem token). As categorias vêm da API pública " +
-      "e os anúncios são lidos das páginas do Mercado Livre.";
+      "✅ <strong>Conectado ao Mercado Livre</strong> — insights com preço e nº de vendas oficiais. " +
+      '<a class="btn-link muted-link" href="/auth/logout">Desconectar</a>';
   }
 
   async function init() {
@@ -353,12 +395,16 @@
     $("btn-test").addEventListener("click", testConnection);
     $("btn-run").addEventListener("click", run);
     $("btn-export").addEventListener("click", exportXlsx);
+    $("query").addEventListener("input", refreshRunButton);
+    $("query").addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !$("btn-run").disabled) run();
+    });
 
     // Detecta o backend antes de chamar a API.
     const backend = await ML.detectBackend();
     if (backend) {
-      renderAuthBanner();
-      // No modo backend/raspagem não há token manual: oculta o campo.
+      renderAuthBanner(backend);
+      // No modo backend o token é gerenciado pelo servidor: oculta o campo.
       const tokenLabel = $("token").closest("label");
       if (tokenLabel) tokenLabel.classList.add("hidden");
     }

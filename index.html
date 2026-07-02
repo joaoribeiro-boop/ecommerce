@@ -57,14 +57,12 @@
 
     <!-- Filtros -->
     <section class="card">
-      <h2>1. Escolha a categoria</h2>
-      <div id="category-path" class="cat-path"></div>
-      <div id="category-loading" class="muted">Carregando categorias…</div>
-
+      <h2>1. Qual anúncio você quer analisar?</h2>
       <div class="grid-2">
         <label>
-          Palavra-chave (opcional)
-          <input id="query" type="text" placeholder="ex.: fone bluetooth" />
+          Título / palavra-chave
+          <input id="query" type="text" placeholder="ex.: fone bluetooth, cadeira gamer, air fryer…" />
+          <small>Traz os anúncios que casam com esse título, com preço e nº de vendas.</small>
         </label>
         <label>
           Condição
@@ -75,6 +73,10 @@
           </select>
         </label>
       </div>
+
+      <h3>Categoria (opcional — refina a busca)</h3>
+      <div id="category-path" class="cat-path"></div>
+      <div id="category-loading" class="muted">Carregando categorias…</div>
 
       <div class="grid-2">
         <label>

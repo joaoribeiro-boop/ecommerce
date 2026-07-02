@@ -189,11 +189,37 @@ const ML = (function () {
     return data;
   }
 
+  /* Insights por título (somente com backend): API oficial com o token da
+   * aplicação e, se ela não tiver acesso à busca, raspagem enriquecida pela
+   * API de itens. Retorna { source, enriched, warnings, total, results }. */
+  async function searchInsights(query, target, onProgress) {
+    const root = typeof location !== "undefined" ? location.href : "http://localhost";
+    const url = new URL("/insights/search", root);
+    if (query.q) url.searchParams.set("q", query.q);
+    if (query.category) url.searchParams.set("category", query.category);
+    if (query.condition) url.searchParams.set("condition", query.condition);
+    if (query.sort) url.searchParams.set("sort", query.sort);
+    if (query.site) url.searchParams.set("site", query.site);
+    url.searchParams.set("target", target);
+    if (onProgress) onProgress(0, target);
+
+    const res = await fetch(url.toString(), { headers: { Accept: "application/json" } });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const kind = data.error === "blocked" ? "blocked" : "http";
+      throw new MLError(res.status, kind, data.message || "Falha na coleta de insights");
+    }
+    const n = (data.results || []).length;
+    if (onProgress) onProgress(n, n);
+    return data;
+  }
+
   return {
     config,
     MLError,
     detectBackend,
     searchScrape,
+    searchInsights,
     categories,
     category,
     searchPage,

@@ -1,25 +1,42 @@
 # Análise de Mercado · Mercado Livre
 
-Agente de pesquisa de mercado que bate na **API do Mercado Livre**, respeita o
-limite de requisições para evitar bloqueio, e gera uma **planilha tratada
-(.xlsx)** filtrada por categoria.
+Plataforma de insights de anúncios do Mercado Livre: você digita o **título /
+palavra-chave**, ela conecta na **API do Mercado Livre com a sua aplicação**
+(Client ID/Secret) e traz **preço, nº de vendas, receita estimada, vendedor,
+frete** etc., com **planilha tratada (.xlsx)** no final.
 
-> ⚠️ **O Mercado Livre bloqueou a busca via API** (`/sites/MLB/search` retorna
-> 403 mesmo com token válido — restrição de política da plataforma). Por isso o
-> app usa **raspagem das páginas públicas** do Mercado Livre para listar os
-> anúncios. **Não precisa de token nem de login.** As categorias continuam vindo
-> da API pública.
+## Como funciona a coleta (endpoint `/insights/search`)
 
-## Como rodar (modo raspagem — recomendado)
+O servidor tenta as fontes nesta ordem, usando o token OAuth da sua aplicação:
+
+1. **Busca oficial** `GET /sites/MLB/search?q=…` — melhor fonte: já traz
+   `sold_quantity` (nº de vendas) por anúncio. Algumas aplicações não têm
+   acesso a este endpoint (retorna 403); nesse caso:
+2. **Raspagem das páginas públicas** (`lista.mercadolivre.com.br`) para
+   descobrir os anúncios do título, **+ enriquecimento via API oficial de
+   itens** (`GET /items?ids=…`, 20 por chamada) para trazer o **nº de vendas**,
+   preço oficial, condição, estoque etc. de cada anúncio.
+3. Sem login, roda só a raspagem (sem nº de vendas) — o app avisa.
+
+Para ver o que a **sua** aplicação consegue acessar, abra:
+
+```
+http://localhost:3000/insights/debug?q=fone%20bluetooth
+```
+
+## Como rodar
 
 ```bash
+cp .env.example .env    # preencha ML_CLIENT_ID e ML_CLIENT_SECRET da sua app
 node server.js          # ou npm start
 ```
-Abra <http://localhost:3000>. Escolha a categoria, **digite uma palavra-chave**
-(a raspagem funciona melhor com palavra-chave), clique em **Analisar mercado** e
-depois em **Baixar planilha (.xlsx)**.
 
-> Não precisa de `.env` nem de credenciais do ML para a raspagem.
+Abra <http://localhost:3000>, clique em **Conectar ao Mercado Livre** (banner no
+topo), autorize, digite o **título** que quer analisar e clique em
+**🔎 Analisar mercado**. Depois é só **⬇️ Baixar planilha (.xlsx)**.
+
+> Sua aplicação precisa ter o redirect URI `http://localhost:3000/auth/callback`
+> cadastrado (veja "Modo desenvolvedor" abaixo).
 
 ### Se der erro / vier vazio (diagnóstico)
 
