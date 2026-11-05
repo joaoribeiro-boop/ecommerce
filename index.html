@@ -1,0 +1,945 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Calculadora ICOMM</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* Layout: três abas. Calculadora = parâmetros de marketing à esquerda (sticky) + cards de plataforma e histórico à direita; Custos = parâmetros gerais + cadastro de produtos; Tabelas = regras dos canais. Uma coluna no celular. */
+:root{
+  --bg:#f5f4f0; --panel:#ffffff; --panel2:#f0efea; --line:#dcdad2; --fg:#1d1c19; --muted:#6f6c62;
+  --accent:#e8542b; --accent-fg:#ffffff; --brand:#6a2c9e;
+  --ok:#1f8a4c; --ok-bg:#e3f4ea; --warn:#b4650c; --warn-bg:#fbeedb; --bad:#c23a2b; --bad-bg:#fae4e1; --info:#2457a8; --info-bg:#e4ecfa;
+  --ml-prem:#2e9d5a; --ml-clas:#e1b000; --shopee:#ee4d2d; --tiktok:#d6294f; --shein:#1d1c19;
+  --display:"Sora",system-ui,sans-serif; --body:"IBM Plex Sans",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
+  --r:10px; --shadow:0 1px 2px rgba(20,18,10,.06),0 6px 20px -8px rgba(20,18,10,.12);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#141412; --panel:#1e1e1b; --panel2:#262623; --line:#36362f; --fg:#efede6; --muted:#a19d90;
+  --accent:#ff6a3d; --accent-fg:#1a1a18; --brand:#c08cf0;
+  --ok:#5ccb84; --ok-bg:#163c25; --warn:#f0a94a; --warn-bg:#3d2a10; --bad:#ff7a6b; --bad-bg:#44201b; --info:#7fa8f0; --info-bg:#1b2a47;
+  --ml-prem:#4cc77a; --ml-clas:#ffd23f; --shopee:#ff6a3d; --tiktok:#ff5c7f; --shein:#efede6;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -10px rgba(0,0,0,.6); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#141412; --panel:#1e1e1b; --panel2:#262623; --line:#36362f; --fg:#efede6; --muted:#a19d90;
+  --accent:#ff6a3d; --accent-fg:#1a1a18; --brand:#c08cf0;
+  --ok:#5ccb84; --ok-bg:#163c25; --warn:#f0a94a; --warn-bg:#3d2a10; --bad:#ff7a6b; --bad-bg:#44201b; --info:#7fa8f0; --info-bg:#1b2a47;
+  --ml-prem:#4cc77a; --ml-clas:#ffd23f; --shopee:#ff6a3d; --tiktok:#ff5c7f; --shein:#efede6;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -10px rgba(0,0,0,.6); color-scheme:dark}
+*{box-sizing:border-box}
+.login{position:fixed;inset:0;z-index:50;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:16px}
+.login .panel{width:min(400px,100%);padding:24px;display:flex;flex-direction:column;gap:12px}
+.login h1{font-size:22px;font-weight:800;color:var(--brand)}
+.login .actions .btn{flex:1;justify-content:center}
+.userbox{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
+.syncbar{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);margin:-4px 0 10px}
+.dotsync{width:8px;height:8px;border-radius:50%;background:var(--muted)}
+.dotsync.ok{background:var(--ok)} .dotsync.warn{background:var(--warn)} .dotsync.bad{background:var(--bad)}
+.migra{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:space-between;padding:10px 14px;margin-bottom:12px;background:var(--warn-bg);color:var(--warn);font-size:13px;font-weight:500;border-color:transparent}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:14px;line-height:1.45;margin:0;
+  padding-block:0 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{font-family:var(--display);margin:0;text-wrap:balance;line-height:1.15}
+.wrap{max-width:1280px;margin:0 auto}
+header.top{padding:14px 0 10px;display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;justify-content:space-between}
+header.top h1{font-size:22px;font-weight:800;letter-spacing:-.02em;color:var(--brand)}
+header.top p{margin:2px 0 0;color:var(--muted);font-size:12px}
+.eyebrow{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+h2.t{font-size:20px;font-weight:700}
+.lead{color:var(--muted);margin:4px 0 14px;max-width:70ch}
+nav.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:18px;overflow-x:auto}
+nav.tabs button{background:none;border:0;border-bottom:3px solid transparent;padding:10px 14px;font:600 13px var(--body);color:var(--muted);cursor:pointer;white-space:nowrap;margin-bottom:-1px}
+nav.tabs button[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--accent)}
+nav.tabs button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px;border-radius:4px}
+.grid{display:grid;grid-template-columns:minmax(0,360px) minmax(0,1fr);gap:22px;align-items:start}
+@media (max-width:900px){.grid{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
+.form{padding:18px;display:flex;flex-direction:column;gap:16px}
+@media (min-width:901px){.form{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto}}
+fieldset{border:0;padding:0;margin:0;display:flex;flex-direction:column;gap:10px;min-width:0}
+legend{font-family:var(--display);font-weight:700;font-size:14px;padding:0;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+legend .dot{width:10px;height:10px;border-radius:3px;display:inline-block}
+.sec{border-top:1px solid var(--line);padding-top:14px}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:500;color:var(--muted);min-width:0}
+label.f input[type=number],label.f input[type=text],select.sel{font:inherit;font-size:14px;color:var(--fg);background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:8px 10px;width:100%;font-variant-numeric:tabular-nums}
+/* seletor de produto com busca */
+.picker{position:relative}
+.pickhead{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.seg button{font:600 11px var(--body);background:var(--panel2);color:var(--muted);border:0;padding:4px 10px;cursor:pointer}
+.seg button+button{border-left:1px solid var(--line)}
+.seg.modo{display:flex}.seg.modo button{flex:1;font-size:12px;padding:8px 10px}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-fg)}
+.pickinput{font:inherit;font-size:14px;font-weight:600;color:var(--fg);background:var(--panel);border:1.5px solid var(--accent);border-radius:7px;padding:9px 10px;width:100%}
+.pickinput:focus{outline:2px solid var(--accent);outline-offset:1px}
+.picklist{position:absolute;left:0;right:0;top:100%;margin-top:4px;z-index:20;background:var(--panel);border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow);max-height:280px;overflow:auto}
+.picklist button{display:flex;flex-direction:column;align-items:flex-start;gap:1px;width:100%;text-align:left;font:inherit;background:none;border:0;border-bottom:1px solid var(--line);padding:8px 10px;color:var(--fg);cursor:pointer}
+.picklist button:last-child{border-bottom:0}
+.picklist button:hover,.picklist button.act{background:var(--panel2)}
+.picklist small{color:var(--muted);font-size:11px}
+.picklist mark{background:var(--warn-bg);color:inherit;border-radius:2px}
+.picklist .vazio{padding:10px;color:var(--muted);font-size:12px}
+label.f.pp{color:var(--fg);font-weight:600}
+label.f.pp input{font-family:var(--mono);font-size:16px;border-color:var(--accent);background:var(--panel)}
+label.f input:focus,select.sel:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:10px}
+.row3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.chk{display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer}
+.chk input{accent-color:var(--accent);width:16px;height:16px}
+.hint{font-size:12px;color:var(--muted);background:var(--panel2);border-radius:7px;padding:8px 10px;line-height:1.4}
+.hint b{color:var(--fg)}
+.summary{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 8px;font-size:11px;background:var(--info-bg);color:var(--info);border-radius:7px;padding:5px 9px;line-height:1.45}
+.summary span{white-space:nowrap;opacity:.8}
+.summary strong{font-size:12px;font-weight:600;opacity:1;font-variant-numeric:tabular-nums}
+.summary .conta{flex-basis:100%;font-weight:600;font-size:12px;opacity:1;white-space:normal}
+.btn{font:inherit;font-weight:600;border:1px solid var(--line);background:var(--panel);color:var(--fg);border-radius:8px;padding:9px 14px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.btn:hover{border-color:var(--fg)}
+.btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn.primary{background:var(--accent);color:var(--accent-fg);border-color:transparent}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.sm{padding:5px 10px;font-size:12px}
+.btn.danger{color:var(--bad)}
+.btn:disabled{opacity:.5;cursor:default}
+.actions{display:flex;flex-wrap:wrap;gap:8px}
+.msg{border-radius:8px;padding:10px 12px;font-size:13px;font-weight:500}
+.msg.err{background:var(--bad-bg);color:var(--bad)}
+.msg.ok{background:var(--ok-bg);color:var(--ok)}
+.toast{position:fixed;left:50%;bottom:max(16px,env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:40;box-shadow:var(--shadow);max-width:92vw}
+.note{font-size:12px;color:var(--muted)}
+/* resultados */
+.results{display:flex;flex-direction:column;gap:18px;min-width:0}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.pill{font:inherit;font-size:12px;font-weight:600;border:1px solid var(--line);background:var(--panel);color:var(--muted);border-radius:999px;padding:5px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.pill .sw{width:8px;height:8px;border-radius:50%;background:var(--c);opacity:.35}
+.pill.on{color:var(--fg);border-color:var(--c)}
+.pill.on .sw{opacity:1}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-top:4px solid var(--c);border-radius:var(--r);box-shadow:var(--shadow);display:flex;flex-direction:column;min-width:0;position:relative}
+.card.off{opacity:.55}
+.card.best{outline:2px solid var(--ok);outline-offset:2px}
+.card .head{padding:14px 14px 12px;border-bottom:1px solid var(--line);text-align:center;display:flex;flex-direction:column;gap:8px;align-items:center}
+.badge{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;border-radius:999px;padding:4px 10px;background:var(--c);color:#fff}
+.card[data-id="ml_classico"] .badge{color:#1d1c19}
+.card[data-id="shein"] .badge{color:var(--bg)}
+.best-tag{position:absolute;top:10px;right:10px;font-size:10px;font-weight:700;background:var(--ok-bg);color:var(--ok);border-radius:999px;padding:3px 8px}
+.fg-toggle{width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--info-bg);color:var(--info);border-radius:8px;padding:7px 10px;font-size:12px;font-weight:600;text-align:left}
+.fg-toggle input{accent-color:var(--info);width:16px;height:16px}
+.price-lbl{font-size:12px;color:var(--muted);font-weight:500}
+.card-prod{font-size:13px;font-weight:600;line-height:1.3;color:var(--fg);max-width:100%;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;text-wrap:balance}
+.card-prod small{display:block;font-size:11px;font-weight:500;color:var(--muted)}
+.price{display:flex;align-items:baseline;justify-content:center;gap:4px}
+.price span{color:var(--muted);font-weight:600}
+.price input{font-family:var(--mono);font-size:30px;font-weight:600;width:150px;text-align:center;background:transparent;border:0;border-bottom:2px dashed var(--line);color:var(--fg);padding:2px 0;font-variant-numeric:tabular-nums}
+.price input:focus{outline:none;border-bottom-color:var(--c)}
+.price input::-webkit-outer-spin-button,.price input::-webkit-inner-spin-button{-webkit-appearance:none}
+.reset{font:inherit;font-size:11px;background:none;border:0;color:var(--c);cursor:pointer;text-decoration:underline;min-height:16px}
+.kpis{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.kpi{font-size:12px;font-weight:600;border-radius:6px;padding:5px 9px;font-variant-numeric:tabular-nums}
+.kpi.ok{background:var(--ok-bg);color:var(--ok)} .kpi.bad{background:var(--bad-bg);color:var(--bad)}
+.kpi.neutral{background:var(--panel2);color:var(--fg)} .kpi.warn{background:var(--warn-bg);color:var(--warn)}
+.lines{padding:12px 14px;display:flex;flex-direction:column;gap:6px;font-size:12px}
+.lines div{display:flex;justify-content:space-between;gap:8px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+.lines div:last-child{border:0;padding-bottom:0}
+.lines .v{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.lines .neg{color:var(--bad)} .lines .hl{color:var(--c)}
+.lines .total{font-weight:700;font-size:14px;border:0;border-radius:7px;padding:8px 10px;margin-top:4px;align-items:center}
+.lines .total .v{font-size:16px}
+.lines .total .sep{opacity:.5;margin:0 2px}
+.lines .total.ok{background:var(--ok-bg);color:var(--ok)}
+.lines .total.warn{background:var(--warn-bg);color:var(--warn)}
+.lines .total.bad{background:var(--bad-bg);color:var(--bad)}
+.empty{color:var(--muted);text-align:center;padding:22px 14px;font-size:13px}
+/* tabelas / histórico */
+.hist{padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.hist .hd{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
+.hist h2{font-size:18px;font-weight:700}
+.hist input.search,.hist select{font:inherit;color:var(--fg);background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:7px 10px}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;font-size:12px;min-width:640px}
+.tbl.small table{min-width:0}
+th,td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+th{background:var(--panel2);font-weight:600;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+td.n{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right}
+th.n{text-align:right}
+tr:last-child td{border:0}
+.chip{font-size:11px;font-weight:600;padding:2px 6px;border-radius:4px;background:var(--panel2)}
+.chip.ok{background:var(--ok-bg);color:var(--ok)} .chip.warn{background:var(--warn-bg);color:var(--warn)}
+textarea.bk{width:100%;min-height:90px;font:12px var(--mono);background:var(--panel2);color:var(--fg);border:1px solid var(--line);border-radius:7px;padding:8px}
+details summary{cursor:pointer;font-weight:600;font-size:13px}
+/* custos */
+.paramgrid{padding:18px;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;align-items:end}
+.prodform{padding:18px;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;align-items:end}
+.wide{grid-column:span 2}
+.cards2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+.cards2 .panel{padding:16px;min-width:0}
+.cards2 h3{font-size:15px;margin-bottom:6px}
+.cards2 p{margin:0 0 8px;font-size:13px;color:var(--muted)}
+@media (prefers-reduced-motion:no-preference){.card{transition:transform .15s}.card:not(.off):hover{transform:translateY(-2px)}}
+</style>
+</head><body>
+
+
+<div id="msg" class="msg ok toast" hidden></div>
+<div class="login" id="loginBox">
+  <form class="panel" id="loginForm">
+    <h1>Calculadora ICOMM</h1>
+    <div class="note" id="loginInfo">Entre com o e-mail liberado pelo administrador.</div>
+    <label class="f">E-mail<input type="email" id="loginEmail" autocomplete="email" required placeholder="voce@empresa.com"></label>
+    <label class="f">Senha<input type="password" id="loginSenha" autocomplete="current-password" required minlength="6" placeholder="mínimo 6 caracteres"></label>
+    <div class="actions"><button class="btn primary" type="submit" id="btnEntrar">Entrar</button><button class="btn" type="button" id="btnPrimeiro">Primeiro acesso</button></div>
+    <div class="note">No primeiro acesso, use o seu e-mail liberado e escolha uma senha.</div>
+    <div class="msg err" id="loginErro" hidden></div>
+  </form>
+</div>
+<div id="exportBox" class="panel" hidden style="position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:30;width:min(640px,92vw);padding:16px;display:flex;flex-direction:column;gap:10px"><strong id="exportTitulo">Exportar</strong><div class="note">Se a cópia automática não funcionar, selecione tudo no campo abaixo (Ctrl+A) e copie (Ctrl+C). Cole no Excel ou Google Sheets.</div><textarea class="bk" id="exportTxt" spellcheck="false" style="min-height:220px"></textarea><div class="actions"><button class="btn primary" id="exportCopiar" type="button">Copiar</button><button class="btn" id="exportFechar" type="button">Fechar</button></div></div>
+<div class="wrap">
+<header class="top">
+  <div>
+    <h1>Calculadora ICOMM</h1>
+    <p>Preço e margem real no ML, Shopee, TikTok Shop e Shein.</p>
+  </div>
+  <div class="actions" style="align-items:flex-end">
+    <label class="f" style="min-width:220px">Conta / cliente<select class="sel" id="contaSel"><option value="">Todas as contas</option></select></label>
+    <button class="btn" id="btnNovaConta" type="button">+ Nova conta</button>
+    <span class="userbox"><span id="userEmail"></span><button class="btn sm" id="btnSair" type="button">Sair</button></span>
+    <button class="btn sm" id="btnTheme" type="button">🌗 Tema</button>
+  </div>
+</header>
+<div class="syncbar" id="syncBar"><span class="dotsync" id="syncDot"></span><span id="syncTxt">Carregando…</span></div>
+<div class="panel migra" id="migraBox" hidden><span id="migraTxt"></span><span class="actions"><button class="btn sm primary" id="btnMigrar" type="button">Enviar pro banco compartilhado</button><button class="btn sm" id="btnMigraNao" type="button">Agora não</button></span></div>
+<div class="panel" id="novaContaBox" hidden style="padding:12px 16px;margin-bottom:14px;display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
+  <label class="f" style="flex:1 1 220px">Nome da conta / cliente<input type="text" id="novaContaNome" placeholder="Ex: Popper, Boxfan, Next10"></label>
+  <button class="btn primary" id="btnContaOk" type="button">Criar conta</button><button class="btn" id="btnContaCancel" type="button">Cancelar</button>
+</div>
+
+<nav class="tabs" role="tablist">
+  <button role="tab" aria-selected="true" data-tab="calc">Calculadora</button>
+  <button role="tab" aria-selected="false" data-tab="custos">Produtos</button>
+  <button role="tab" aria-selected="false" data-tab="param">Parâmetros</button>
+  <button role="tab" aria-selected="false" data-tab="tabelas">Tabelas de custo</button>
+  <button role="tab" aria-selected="false" data-tab="acessos" id="tabAcessos" hidden>Acessos</button>
+</nav>
+
+<!-- ===== CALCULADORA ===== -->
+<div class="grid" id="tab-calc" role="tabpanel">
+<section class="panel form" aria-label="Parâmetros de marketing">
+  <fieldset>
+    <legend><span class="dot" style="background:var(--accent)"></span>Produto</legend>
+    <div class="f picker">
+      <div class="pickhead"><span>Produto cadastrado *</span>
+        <div class="seg" role="group" aria-label="Buscar por"><button type="button" data-by="nome" aria-pressed="true">Nome</button><button type="button" data-by="sku" aria-pressed="false">SKU</button></div></div>
+      <input type="search" id="pickBusca" class="pickinput" autocomplete="off" placeholder="Digite o nome do produto" role="combobox" aria-expanded="false" aria-controls="pickLista">
+      <div class="picklist" id="pickLista" role="listbox" hidden></div>
+    </div>
+    <div class="summary" id="prodSummary"></div>
+    <div class="f"><span>Precificar por</span>
+      <div class="seg modo" role="group" aria-label="Precificar por"><button type="button" data-modo="preco" aria-pressed="true">Preço praticado</button><button type="button" data-modo="margem" aria-pressed="false">Margem desejada</button></div></div>
+    <label class="f pp" id="boxMargem" hidden>Margem desejada (%)<input type="number" step="0.1" id="margemAlvo" placeholder="vazio = margem mínima da conta"></label>
+    <div class="note" id="margemNota"></div>
+  </fieldset>
+
+  <fieldset class="sec" data-mk="ml_premium ml_classico">
+    <legend><span class="dot" style="background:var(--ml-clas)"></span>Mercado Livre</legend>
+    <label class="f pp ppbox">Preço praticado (R$)<input type="number" step="0.01" min="0" data-pp="ml_premium ml_classico" placeholder="vazio = sugerido pela margem mínima"></label>
+    <div class="row">
+      <label class="f">Comissão Premium (%)<input type="number" step="0.1" id="comPrem" value="17"></label>
+      <label class="f">Comissão Clássico (%)<input type="number" step="0.1" id="comClas" value="12"></label>
+    </div>
+    <div class="row3">
+      <label class="f">Cupom (%)<input type="number" step="0.1" min="0" id="cupomML" value="0"></label>
+      <label class="f">Ads (%)<input type="number" step="0.1" min="0" id="adsML" value="0"></label>
+      <label class="f">Afiliados (%)<input type="number" step="0.1" min="0" id="afML" value="0"></label>
+    </div>
+
+  </fieldset>
+
+  <fieldset class="sec" data-mk="shopee">
+    <legend><span class="dot" style="background:var(--shopee)"></span>Shopee</legend>
+    <label class="f pp ppbox">Preço praticado (R$)<input type="number" step="0.01" min="0" data-pp="shopee" placeholder="vazio = sugerido pela margem mínima"></label>
+    <div class="row3">
+      <label class="f">Cupom (%)<input type="number" step="0.1" min="0" id="cupomShopee" value="0"></label>
+      <label class="f">Ads (%)<input type="number" step="0.1" min="0" id="adsShopee" value="0"></label>
+      <label class="f">Afiliados (%)<input type="number" step="0.1" min="0" id="afShopee" value="0"></label>
+    </div>
+
+  </fieldset>
+
+  <fieldset class="sec" data-mk="tiktok">
+    <legend><span class="dot" style="background:var(--tiktok)"></span>TikTok Shop</legend>
+    <label class="f pp ppbox">Preço praticado (R$)<input type="number" step="0.01" min="0" data-pp="tiktok" placeholder="vazio = sugerido pela margem mínima"></label>
+    <div class="row3">
+      <label class="f">Cupom (%)<input type="number" step="0.1" min="0" id="cupomTiktok" value="0"></label>
+      <label class="f">Ads (%)<input type="number" step="0.1" min="0" id="adsTiktok" value="0"></label>
+      <label class="f">Afiliados (%)<input type="number" step="0.1" min="0" id="afTiktok" value="0"></label>
+    </div>
+
+  </fieldset>
+
+  <fieldset class="sec" data-mk="shein">
+    <legend><span class="dot" style="background:var(--shein)"></span>Shein</legend>
+    <label class="f pp ppbox">Preço praticado (R$)<input type="number" step="0.01" min="0" data-pp="shein" placeholder="vazio = sugerido pela margem mínima"></label>
+    <div class="row3">
+      <label class="f">Cupom (%)<input type="number" step="0.1" min="0" id="cupomShein" value="0"></label>
+      <label class="f">Ads (%)<input type="number" step="0.1" min="0" id="adsShein" value="0"></label>
+      <label class="f">Afiliados (%)<input type="number" step="0.1" min="0" id="afShein" value="0"></label>
+    </div>
+
+  </fieldset>
+
+  <div id="erro" class="msg err" hidden></div>
+  <div class="actions">
+    <button class="btn primary" id="btnSalvar" type="button">Salvar simulação</button>
+    <button class="btn" id="btnNova" type="button">Limpar</button>
+  </div>
+</section>
+
+<section class="results">
+  <div>
+    <div class="eyebrow">Resultados</div>
+    <h2 class="t">Compare o ganho real em cada plataforma</h2>
+  </div>
+  <div class="toolbar" id="plats"></div>
+  <div class="cards" id="cards"></div>
+
+  <section class="panel hist" aria-label="Histórico">
+    <div class="hd">
+      <h2>Histórico (<span id="histN">0</span>)</h2>
+      <div class="actions">
+        <input class="search" id="busca" type="search" placeholder="Buscar nome ou SKU">
+        <select id="ordem"><option value="recentes">Mais recentes</option><option value="nome">Nome A–Z</option><option value="custo">Maior custo</option></select>
+        <button class="btn sm" id="btnExcel" type="button">Exportar Excel</button>
+      </div>
+    </div>
+    <div class="tbl"><table>
+      <thead><tr><th>Produto</th><th>Conta</th><th class="n">Custo</th><th class="n">ML Premium</th><th class="n">ML Clássico</th><th class="n">Shopee</th><th class="n">TikTok</th><th class="n">Shein</th><th></th></tr></thead>
+      <tbody id="histBody"></tbody>
+    </table></div>
+    <div class="empty" id="histEmpty"></div>
+    <details>
+      <summary>Backup (copiar / colar)</summary>
+      <div class="note" style="margin:8px 0">Cópia de segurança de produtos, contas, parâmetros e histórico. Pra trazer os dados da versão antiga, copie o backup lá e cole aqui.</div>
+      <textarea class="bk" id="bk" spellcheck="false"></textarea>
+      <div class="actions" style="margin-top:8px">
+        <button class="btn sm" id="btnBkCopy" type="button">Copiar backup</button>
+        <button class="btn sm" id="btnBkLoad" type="button">Importar o que está colado</button>
+      </div>
+    </details>
+  </section>
+</section>
+</div>
+
+<!-- ===== CUSTOS ===== -->
+<section id="tab-param" role="tabpanel" hidden>
+  <div class="eyebrow">Parâmetros por conta</div>
+  <h2 class="t" id="paramTitulo">Parâmetros</h2>
+  <p class="lead">Cada conta tem os seus. A calculadora usa os parâmetros da conta do produto selecionado.</p>
+  <div class="panel paramgrid">
+    <label class="f">Imposto (%)<input type="number" step="0.01" id="gImposto" value="11.30"></label>
+    <label class="f">Margem mínima (%)<input type="number" step="0.1" id="gMargem" value="15"></label>
+    <label class="f">Shopee Antecipa (%)<input type="number" step="0.1" min="0" id="gAntecipa" value="0"></label>
+    <label class="chk"><input type="checkbox" id="gDevolucao"> Devolução Fácil (R$ 0,49/item)</label>
+    <label class="chk"><input type="checkbox" id="gEventos"> Eventos oficiais Shopee (+2,5%)</label>
+    <label class="f">Comissão Shein (%)<input type="number" step="0.1" min="0" id="gComShein" value="20"></label>
+  </div>
+</section>
+
+<!-- ===== PRODUTOS ===== -->
+<section id="tab-custos" role="tabpanel" hidden>
+  <div class="eyebrow">Cadastro de custos</div>
+  <h2 class="t">Produtos</h2>
+  <p class="lead">Cada produto com CMV (custo), peso real e dimensões. O peso cubado é C × L × A ÷ 6.000 (cm → kg); o frete do Mercado Livre e da Shein usa o maior entre peso real e cubado.</p>
+  <form class="panel prodform" id="formProd">
+    <label class="f wide">Nome do produto *<input type="text" id="pNome" required placeholder="Ex: Spray glitter prata 150 ml"></label>
+    <label class="f">Conta / cliente *<input type="text" id="pCliente" placeholder="Ex: Popper" list="contaList"><datalist id="contaList"></datalist></label>
+    <label class="f">SKU / Ref.<input type="text" id="pSku" placeholder="Ex: 9618-SLL"></label>
+    <label class="f">Categoria<input type="text" id="pCat" placeholder="Ex: Spray" list="catList"><datalist id="catList"></datalist></label>
+    <label class="f">CMV (R$) *<input type="number" step="0.01" min="0" id="pCmv" placeholder="0,00"></label>
+    <label class="f">Peso real (g)<input type="number" step="1" min="0" id="pPeso" placeholder="248"></label>
+    <label class="f">Compr. (cm)<input type="number" step="0.1" min="0" id="pC" placeholder="0"></label>
+    <label class="f">Larg. (cm)<input type="number" step="0.1" min="0" id="pL" placeholder="0"></label>
+    <label class="f">Alt. (cm)<input type="number" step="0.1" min="0" id="pA" placeholder="0"></label>
+    <div class="f"><span class="note">Peso cubado</span><strong style="font-family:var(--mono);padding:8px 0" id="pCubado">—</strong></div>
+    <div class="actions"><button class="btn primary" type="submit" id="btnProd">Cadastrar produto</button><button class="btn" type="button" id="btnProdCancel" hidden>Cancelar</button></div>
+    <div class="note wide" id="prodMsg"></div>
+  </form>
+  <div class="panel hist" style="margin-top:14px">
+    <div class="hd"><h2>Cadastrados (<span id="prodN">0</span>)</h2>
+      <div class="actions">
+        <input class="search" id="prodBusca" type="search" placeholder="Buscar nome, SKU ou categoria">
+        <button class="btn sm" id="btnProdExport" type="button">Exportar Excel</button>
+        <button class="btn sm" id="btnProdModelo" type="button">Baixar modelo</button>
+        <label class="btn sm" for="prodImport">Importar planilha<input type="file" id="prodImport" accept=".xlsx,.xls,.csv,.tsv,.txt" hidden></label>
+      </div></div>
+    <div class="note" id="prodImportMsg">Planilha com as colunas: Produto, Conta, SKU, Categoria, CMV, Peso (g), Comprimento, Largura, Altura (cm). Aceita .xlsx ou .csv. Produtos com mesmo nome + conta são atualizados.</div>
+    <div class="tbl"><table>
+      <thead><tr><th>Produto</th><th>Conta</th><th>SKU</th><th>Categoria</th><th class="n">CMV</th><th class="n">Peso real</th><th class="n">C × L × A</th><th class="n">Cubado</th><th class="n">Peso p/ frete</th><th></th></tr></thead>
+      <tbody id="prodBody"></tbody>
+    </table></div>
+    <div class="empty" id="prodEmpty">Nenhum produto cadastrado ainda.</div>
+  </div>
+</section>
+
+<!-- ===== ACESSOS ===== -->
+<section id="tab-acessos" role="tabpanel" hidden>
+  <div class="eyebrow">Administração</div>
+  <h2 class="t">Quem pode usar a calculadora</h2>
+  <p class="lead">Só e-mails desta lista conseguem entrar. Depois de liberar, avise a pessoa pra clicar em "Primeiro acesso" e criar a senha.</p>
+  <form class="panel paramgrid" id="formMembro">
+    <label class="f wide">E-mail<input type="text" id="mEmail" placeholder="pessoa@empresa.com" autocomplete="off"></label>
+    <label class="chk"><input type="checkbox" id="mAdmin"> Administrador (pode liberar acessos)</label>
+    <div class="actions"><button class="btn primary" type="submit">Liberar acesso</button></div>
+  </form>
+  <div class="panel hist" style="margin-top:14px">
+    <div class="tbl small"><table><thead><tr><th>E-mail</th><th>Perfil</th><th>Liberado em</th><th></th></tr></thead><tbody id="membrosBody"></tbody></table></div>
+  </div>
+</section>
+
+<!-- ===== TABELAS ===== -->
+<section id="tab-tabelas" role="tabpanel" hidden>
+  <div class="eyebrow">Referência</div>
+  <h2 class="t">Tabelas de custo usadas na calculadora</h2>
+  <p class="lead">Cada card desconta: comissão do canal, frete ou taxa fixa, Antecipa/eventos (Shopee), taxa por item (TikTok), cupom, Ads, afiliados e imposto, além do custo do produto. O que sobra é o lucro. A margem % é calculada sobre o preço líquido: lucro ÷ (preço − imposto).</p>
+  <div class="cards2">
+    <div class="panel"><h3 style="color:var(--shopee)">Shopee</h3>
+      <p>Comissão e taxa fixa automáticas pelo preço do anúncio. Devolução Fácil soma R$ 0,49 por item; Eventos oficiais somam 2,5%; Antecipa é o % da aba Custos.</p>
+      <div class="tbl small"><table><thead><tr><th>Preço do anúncio</th><th class="n">Comissão</th><th class="n">Taxa fixa</th></tr></thead><tbody id="tblShopee"></tbody></table></div></div>
+    <div class="panel"><h3 style="color:var(--tiktok)">TikTok Shop</h3>
+      <p>Comissão e taxa por item pelo preço; frete de 6% sobre o preço, sempre (vigente desde 15/07/2026).</p>
+      <div class="tbl small"><table><thead><tr><th>Preço do anúncio</th><th class="n">Comissão</th><th class="n">Taxa por item</th><th class="n">Frete</th></tr></thead><tbody><tr><td>Abaixo de R$ 50</td><td class="n">10%</td><td class="n">R$ 4,00</td><td class="n">6%</td></tr><tr><td>A partir de R$ 50</td><td class="n">6%</td><td class="n">R$ 6,00</td><td class="n">6%</td></tr></tbody></table></div></div>
+    <div class="panel"><h3>Shein</h3>
+      <p>Comissão da aba Custos (18% em algumas categorias, 20% em vestuário). Frete por faixa de peso, independente do preço (Taxa de Intermediação de Frete, desde 14/04/2025).</p>
+      <div class="tbl small"><table><thead><tr><th>Peso p/ frete</th><th class="n">Frete</th></tr></thead><tbody id="tblShein"></tbody></table></div></div>
+    <div class="panel"><h3 style="color:var(--ml-prem)">Mercado Livre</h3>
+      <p>Comissão Clássico 12% ou Premium 17% (editáveis na calculadora). Frete pago pelo vendedor cruzando faixa de preço × peso (maior entre real e cubado). Abaixo de R$ 79 o frete grátis é opcional e usa a coluna "Frete grátis".</p>
+      <p class="note">Tabela completa abaixo (reputação verde / MercadoLíder).</p></div>
+  </div>
+  <div class="panel hist" style="margin-top:14px">
+    <div class="hd"><h2>Frete Mercado Livre por peso e faixa de preço</h2></div>
+    <div class="tbl"><table id="tblML"><thead></thead><tbody></tbody></table></div>
+  </div>
+</section>
+</div>
+
+<script>
+// ===================== REGRAS (reproduzidas do site original) =====================
+const matrizFrete = [
+ {minWeight:0,fg:12.95,c:[5.65,6.85,8.15,12.95,14.95,16.95,19.05,21.65]},{minWeight:0.3,fg:13.85,c:[5.95,6.95,8.25,13.85,16.15,18.15,20.45,23.25]},
+ {minWeight:0.5,fg:14.45,c:[6.05,7.15,8.45,14.45,16.85,19.05,21.35,24.45]},{minWeight:1,fg:14.75,c:[6.15,7.35,8.65,14.75,17.15,19.45,21.75,25.45]},
+ {minWeight:1.5,fg:15.05,c:[6.25,7.45,8.75,15.05,17.65,19.85,22.25,25.55]},{minWeight:2,fg:16.45,c:[6.35,8.65,9.15,16.45,19.15,21.65,24.35,27.05]},
+ {minWeight:3,fg:17.85,c:[6.45,8.75,9.75,17.85,20.75,23.35,26.35,29.25]},{minWeight:4,fg:19.75,c:[6.55,8.85,10.25,19.75,22.85,26.05,29.25,32.45]},
+ {minWeight:5,fg:25.95,c:[6.65,8.95,10.35,25.95,29.15,33.35,36.45,40.85]},{minWeight:6,fg:27.55,c:[6.75,9.05,10.45,27.55,31.65,36.75,40.85,45.25]},
+ {minWeight:7,fg:29.45,c:[6.85,9.25,10.55,29.45,34.35,39.25,44.15,49.35]},{minWeight:8,fg:30.25,c:[6.95,9.35,10.65,30.25,35.25,40.35,45.35,50.75]},
+ {minWeight:9,fg:38.25,c:[7.05,9.45,10.85,38.25,45.05,51.95,58.75,65.85]},{minWeight:10,fg:41.65,c:[7.05,9.65,11.05,41.65,48.55,55.45,62.35,69.35]},
+ {minWeight:11,fg:42.55,c:[7.15,10.05,11.45,42.55,49.75,56.85,63.85,70.95]},{minWeight:13,fg:45.55,c:[7.25,10.25,11.65,45.55,52.95,60.55,68.15,75.65]},
+ {minWeight:15,fg:48.95,c:[7.35,10.45,11.85,48.95,56.55,64.05,71.35,79.35]},{minWeight:17,fg:55.15,c:[7.45,10.65,12.05,55.15,64.35,73.55,82.75,91.95]},
+ {minWeight:20,fg:64.55,c:[7.65,11.05,12.25,64.55,75.75,85.45,96.25,106.85]},{minWeight:25,fg:66.45,c:[7.75,11.25,12.45,66.45,76.05,86.25,97.15,107.85]},
+ {minWeight:30,fg:68.35,c:[7.85,11.45,12.65,68.35,79.65,89.75,100.05,107.95]},{minWeight:40,fg:70.95,c:[7.95,11.65,12.85,70.95,81.85,92.85,103.45,111.65]},
+ {minWeight:50,fg:75.55,c:[8.05,11.85,13.05,75.55,87.25,99.05,110.25,119.05]},{minWeight:60,fg:80.95,c:[8.15,12.05,13.25,80.95,93.75,105.95,118.05,127.45]},
+ {minWeight:70,fg:84.65,c:[8.25,12.25,13.45,84.65,97.95,110.75,123.35,133.15]},{minWeight:80,fg:94.05,c:[8.35,12.45,13.65,94.05,108.35,122.95,136.95,147.85]},
+ {minWeight:90,fg:107.45,c:[8.45,12.65,13.85,107.45,124.85,140.45,156.45,168.85]},{minWeight:100,fg:120.15,c:[8.55,12.85,14.05,120.15,138.95,156.95,174.85,188.85]},
+ {minWeight:125,fg:127.45,c:[8.65,12.85,14.25,127.45,147.05,166.55,185.55,200.35]},{minWeight:150,fg:167.05,c:[8.75,12.85,14.45,167.05,193.35,218.45,243.45,262.85]}
+];
+function custoFreteML(peso, preco, freteGratis){
+  let linha = matrizFrete[0];
+  for (const l of matrizFrete){ if (peso >= l.minWeight) linha = l; else break; }
+  if (freteGratis) return linha.fg;
+  const faixas=[0,19,49,79,100,120,150,200]; let i=0;
+  for (let k=0;k<faixas.length;k++){ if (preco>=faixas[k]) i=k; else break; }
+  return linha.c[i];
+}
+// pctExtra = margem + imposto + cupom + ads + afiliados (tudo que é % do preço, fora a comissão do canal)
+function precoML(custo, peso, pctExtra, comissao, freteGratis){
+  const s=(pctExtra+comissao)/100;
+  if (s>=1) return {erro:'A soma de margem + imposto + comissão + cupom + ads + afiliados supera 100%.'};
+  let p=custo/(1-s), ant=0, it=0, frete=0;
+  while (Math.abs(p-ant)>0.01 && it<100){ ant=p; frete=custoFreteML(peso,p,freteGratis); p=(custo+frete)/(1-s); it++; }
+  if (it>=100) return {erro:'Erro de convergência no Mercado Livre.'};
+  return {venda:p, custoFrete:frete};
+}
+const FAIXAS_SHOPEE=[{max:9,p:.2,fPct:.5},{max:79.99,p:.2,f:4.5},{max:99.99,p:.14,f:16},{max:199.99,p:.14,f:20},{max:Infinity,p:.14,f:26}];
+function taxaShopee(preco){ const fx=FAIXAS_SHOPEE.find(f=>preco<=f.max)||FAIXAS_SHOPEE.at(-1); return {valor: fx.fPct? preco*fx.fPct : fx.f, com: fx.p, prop: !!fx.fPct}; }
+function precoShopee(custo, pctExtra, antecipa, devolucao, eventos){
+  const dev = devolucao?0.49:0, ev = eventos?2.5:0;
+  for (const fx of FAIXAS_SHOPEE){
+    const den = 1 - fx.p - (fx.fPct||0) - (pctExtra+antecipa+ev)/100;
+    if (den<=0) continue;
+    const p=(custo+(fx.f||0)+dev)/den;
+    if (p<=fx.max || fx.max===Infinity) return {venda:p};
+  }
+  return {erro:'Não foi possível calcular o preço da Shopee.'};
+}
+const TT_FRETE=6;
+const faixaTT = p => p<50 ? {com:10,fixa:4} : {com:6,fixa:6};
+function precoTiktok(custo, pctExtra){
+  const tentar=(com,fixa)=>{ const s=(pctExtra+com+TT_FRETE)/100; return s>=1?null:(custo+fixa)/(1-s); };
+  const a=tentar(10,4); if (a!==null && a<50) return {venda:a};
+  const b=tentar(6,6); if (b!==null) return {venda:b};
+  return {erro:'A soma de margem + imposto + taxas do TikTok supera 100%.'};
+}
+const FRETE_SHEIN=[[0.3,4],[0.6,5],[0.9,6],[1.2,8],[1.5,10],[2,12],[5,15],[9,32],[13,63],[17,73],[23,89],[30,106]];
+function freteShein(peso){ for (const [m,t] of FRETE_SHEIN) if (peso<m) return t; return 106; }
+function precoShein(custo, peso, pctExtra, comissao){
+  const s=(pctExtra+comissao)/100;
+  if (s>=1) return {erro:'A soma de margem + imposto + comissão + cupom + ads + afiliados (Shein) supera 100%.'};
+  return {venda:(custo+freteShein(peso))/(1-s)};
+}
+
+// ===================== PLATAFORMAS =====================
+// mk = {cupom, ads, af} do canal; ctx = produto + parâmetros gerais
+const mkLines=(p,mk)=>[['Cupom ('+mk.cupom+'%)',p*mk.cupom/100,mk.cupom===0],['Ads ('+mk.ads+'%)',p*mk.ads/100,mk.ads===0,'hl'],['Afiliados ('+mk.af+'%)',p*mk.af/100,mk.af===0]];
+// margem é sobre o preço líquido (preço − imposto): lucro = m × P × (1 − imposto), então entra como m × (1 − imposto) na soma de % do preço
+const extra=(ctx,mk)=>ctx.margem*(1-ctx.imposto/100)+ctx.imposto+mk.cupom+mk.ads+mk.af;
+function detML(p,ctx,mk,fg,com){ const cv=p*com/100, fr=custoFreteML(ctx.peso,p,fg); const m=mkLines(p,mk);
+  return {custos:[cv,fr,...m.map(x=>x[1])], linhas:[['Comissão ('+com+'%)',cv],['Custo de frete',fr],...m]}; }
+const PLATS=[
+ {id:'ml_premium',name:'ML Premium',color:'var(--ml-prem)',mk:'ML',freteGratis:true,
+  calc:(c,mk)=>{ if(!(c.peso>0)) return null; return precoML(c.custo,c.peso,extra(c,mk),c.comPrem,false); },
+  calcFG:(c,mk)=>precoML(c.custo,c.peso,extra(c,mk),c.comPrem,true),
+  det:(p,c,mk,fg)=>detML(p,c,mk,fg,c.comPrem)},
+ {id:'ml_classico',name:'ML Clássico',color:'var(--ml-clas)',mk:'ML',freteGratis:true,
+  calc:(c,mk)=>{ if(!(c.peso>0)) return null; return precoML(c.custo,c.peso,extra(c,mk),c.comClas,false); },
+  calcFG:(c,mk)=>precoML(c.custo,c.peso,extra(c,mk),c.comClas,true),
+  det:(p,c,mk,fg)=>detML(p,c,mk,fg,c.comClas)},
+ {id:'shopee',name:'Shopee',color:'var(--shopee)',mk:'Shopee',
+  calc:(c,mk)=>precoShopee(c.custo,extra(c,mk),c.antecipa,c.devolucao,c.eventos),
+  det:(p,c,mk)=>{ const tx=taxaShopee(p); const com=p*tx.com, dev=c.devolucao?0.49:0, taxa=tx.valor+dev, ant=p*c.antecipa/100, ev=c.eventos?p*0.025:0; const m=mkLines(p,mk);
+    return {custos:[com,taxa,ant,ev,...m.map(x=>x[1])], linhas:[['Comissão ('+Math.round(tx.com*100)+'%)',com],[tx.prop?'Taxa fixa (50% do preço)'+(dev?' + devolução':''):'Taxa fixa'+(dev?' + devolução':''),taxa],['Antecipa ('+c.antecipa+'%)',ant,ant===0],['Eventos oficiais (2,5%)',ev,ev===0],...m]}; }},
+ {id:'tiktok',name:'TikTok Shop',color:'var(--tiktok)',mk:'Tiktok',
+  calc:(c,mk)=>precoTiktok(c.custo,extra(c,mk)),
+  det:(p,c,mk)=>{ const fx=faixaTT(p); const com=p*fx.com/100, fixa=fx.fixa, fr=p*TT_FRETE/100; const m=mkLines(p,mk);
+    return {custos:[com,fixa,fr,...m.map(x=>x[1])], linhas:[['Comissão ('+fx.com+'%)',com],['Taxa por item',fixa],['Frete ('+TT_FRETE+'%)',fr],...m]}; }},
+ {id:'shein',name:'Shein',color:'var(--shein)',mk:'Shein',
+  calc:(c,mk)=>{ if(!(c.peso>0)) return null; return precoShein(c.custo,c.peso,extra(c,mk),c.comShein); },
+  det:(p,c,mk)=>{ const com=p*c.comShein/100, fr=freteShein(c.peso); const m=mkLines(p,mk);
+    return {custos:[com,fr,...m.map(x=>x[1])], linhas:[['Comissão ('+c.comShein+'%)',com],['Frete (por peso)',fr],...m]}; }}
+];
+function breakdown(plat, preco, ctx, mk, fg){
+  const d=plat.det(preco,ctx,mk,fg); const imp=preco*ctx.imposto/100;
+  const lucro=preco-ctx.custo-imp-d.custos.reduce((a,b)=>a+b,0);
+  const liquido=preco-imp;
+  return {...d, imposto:imp, liquido, lucro, margem: liquido>0 ? lucro/liquido*100 : 0};
+}
+
+// ===================== ESTADO =====================
+const $=id=>document.getElementById(id);
+const BRL=v=>(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const num=id=>parseFloat($(id).value)||0;
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const ls={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+// ===================== ARMAZENAMENTO (banco compartilhado do artifact, ou este navegador) =====================
+const ST={db:null, modo:'local', podeEscrever:true, carregou:{}};
+const fid=v=>String(v).replace(/[^A-Za-z0-9_\-.~:@+]/g,'_').slice(0,180)||'_';
+const hashStr=t=>{ let h=5381; for(const ch of String(t)) h=((h<<5)+h+ch.charCodeAt(0))>>>0; return h.toString(36); };
+const contaDocId=nome=>'c_'+fid(String(nome).normalize('NFD').replace(/[̀-ͯ]/g,'')).slice(0,60)+'_'+hashStr(nome);
+function setSync(cls,txt){ $('syncDot').className='dotsync '+cls; $('syncTxt').textContent=txt; }
+function erroEscrita(e){ const c=e&&e.code;
+  if(c==='invalid_argument'){ ST.podeEscrever=false; notificar('Você tem acesso só de leitura nesta calculadora. Peça acesso de Colaborador ou Editor pra quem compartilhou.'); setSync('warn','Banco compartilhado · somente leitura'); }
+  else if(c==='quota_exceeded') notificar('O banco compartilhado está cheio. Apague produtos ou simulações antigas.');
+  else notificar('Não consegui salvar no banco agora. Tente de novo em instantes.'); }
+async function grava(ref,data){ if(!ST.podeEscrever){ notificar('Você tem acesso só de leitura nesta calculadora.'); return false; }
+  try{ await ref.set(JSON.parse(JSON.stringify(data))); return true; }catch(e){ if(e&&e.code==='unavailable'){ await new Promise(r=>setTimeout(r,400+Math.random()*600)); try{ await ref.set(JSON.parse(JSON.stringify(data))); return true; }catch(e2){ erroEscrita(e2); return false; } } erroEscrita(e); return false; } }
+async function apaga(ref){ if(!ST.podeEscrever){ notificar('Você tem acesso só de leitura nesta calculadora.'); return false; } try{ await ref.delete(); return true; }catch(e){ erroEscrita(e); return false; } }
+function persistProduto(p){ if(ST.db) return grava(ST.db.collection('produtos').doc(fid(p.id)),p); ls.set('produtos_cadastrados',produtos); }
+function removerProduto(id){ if(ST.db) return apaga(ST.db.collection('produtos').doc(fid(id))); ls.set('produtos_cadastrados',produtos); }
+function persistSim(sim){ if(ST.db) return grava(ST.db.collection('simulacoes').doc(fid(sim.id)),sim); ls.set('simulacoes_salvas',historico); }
+function removerSim(id){ if(ST.db) return apaga(ST.db.collection('simulacoes').doc(fid(id))); ls.set('simulacoes_salvas',historico); }
+function persistConta(nome){ if(ST.db) return grava(ST.db.collection('contas').doc(contaDocId(nome)),{nome}); ls.set('contas',contasExtra); }
+const paramTimers={};
+function persistParam(chave,g){ if(!ST.db){ ls.set('parametros_por_conta',parametros); return; }
+  clearTimeout(paramTimers[chave]); paramTimers[chave]=setTimeout(()=>grava(ST.db.collection('parametros').doc(chave==='_default'?'_default':contaDocId(chave)),{...g,conta:chave}),600); }
+async function persistMuitos(lista,fn){ for(const x of lista){ const ok=await fn(x); if(ok===false) return false; } return true; }
+function recalcContas(){ contas=[...new Set([...contasExtra,...produtos.map(p=>p.cliente||'Sem conta')])].filter(Boolean).sort((a,b)=>a.localeCompare(b)); }
+
+const MK_IDS=['comPrem','comClas','cupomML','adsML','afML','cupomShopee','adsShopee','afShopee','cupomTiktok','adsTiktok','afTiktok','cupomShein','adsShein','afShein'];
+const G_IDS=['gImposto','gMargem','gAntecipa','gComShein'];
+let produtos=ls.get('produtos_cadastrados',[]), historico=ls.get('simulacoes_salvas',[]), contasExtra=ls.get('contas',[]), contas=[], parametros=ls.get('parametros_por_conta',{}), contaSel=ls.get('conta_sel','');
+const DEF_PARAM={gImposto:'11.30',gMargem:'15',gAntecipa:'0',gDevolucao:false,gEventos:false,gComShein:'20'};
+function paramDe(conta){ return {...DEF_PARAM, ...(parametros[conta||'_default']||{})}; }
+function visiveis(){ return produtos.filter(p=>!contaSel||p.cliente===contaSel); }
+let modo=ls.get('modo_preco','preco'); if(modo!=='preco'&&modo!=='margem') modo='preco';
+let prodSel=null, precoManual={}, freteGratis={}, ativas=ls.get('plataformas_ativas',PLATS.map(p=>p.id)), editId=null, confirmDel=null, prodEdit=null;
+
+const cub=p=>(p.c>0&&p.l>0&&p.a>0)?p.c*p.l*p.a/6000:0;
+const pesoFrete=p=>Math.max((p.peso||0)/1000,cub(p));
+const kg=v=>v>=1?v.toLocaleString('pt-BR',{maximumFractionDigits:3})+' kg':Math.round(v*1000)+' g';
+
+function globais(){ const g=paramDe(prodSel?prodSel.cliente:contaSel); const n=v=>parseFloat(v)||0; const alvo=modo==='margem'?$('margemAlvo').value:''; const min=n(g.gMargem); return {imposto:n(g.gImposto),margemMin:min,margem:alvo!==''?(parseFloat(alvo)||0):min,antecipa:n(g.gAntecipa),devolucao:!!g.gDevolucao,eventos:!!g.gEventos,comShein:n(g.gComShein)}; }
+function ctxLive(){ const g=globais(); const p=prodSel||{cmv:0,peso:0,c:0,l:0,a:0};
+  return {...g, custo:p.cmv||0, peso:pesoFrete(p), comPrem:num('comPrem'), comClas:num('comClas')}; }
+function mkOf(plat){ const k=plat.mk; return {cupom:num('cupom'+k),ads:num('ads'+k),af:num('af'+k)}; }
+function resultadoPlat(plat, ctx){
+  if (!(ctx.custo>0)) return null;
+  const mk=mkOf(plat);
+  const base=plat.calc(ctx,mk); if(!base || base.erro) return base;
+  const allowToggle = plat.freteGratis && base.venda<79;
+  const toggle = allowToggle && !!freteGratis[plat.id];
+  const res = toggle ? plat.calcFG(ctx,mk) : base;
+  if (res.erro) return res;
+  return {...res, allowToggle, toggle, mk};
+}
+
+// ===================== RENDER CALCULADORA =====================
+function render(){
+  const ctx=ctxLive();
+  $('prodSummary').innerHTML = prodSel
+    ? `<span class="conta">${esc(prodSel.cliente||'—')}</span><span title="Custo do produto (aba Produtos)">CMV <strong>${BRL(prodSel.cmv)}</strong></span><span title="Peso p/ frete"><strong>${ctx.peso?kg(ctx.peso):'—'}</strong></span><span title="Imposto (aba Parâmetros)">Imp <strong>${ctx.imposto}%</strong></span><span title="Margem mínima (aba Parâmetros)">Mín <strong>${ctx.margemMin}%</strong></span>`
+    : `<span class="conta">Nenhum produto selecionado.</span>`;
+  $('boxMargem').hidden=modo!=='margem'; document.querySelectorAll('.ppbox').forEach(l=>l.hidden=modo!=='preco'); document.querySelectorAll('.seg.modo button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.modo===modo));
+  const ma=modo==='margem'?$('margemAlvo').value:''; $('margemNota').textContent = modo==='preco'?`Vazio = sugerido p/ ${ctx.margemMin}% de margem.`:(ma!==''&&ctx.margem<ctx.margemMin?`Abaixo da mínima da conta (${ctx.margemMin}%).`:''); $('margemNota').hidden=!$('margemNota').textContent;
+  $('plats').innerHTML='<span class="eyebrow" style="margin-right:4px">Comparar:</span>'+PLATS.map(p=>`<button type="button" class="pill ${ativas.includes(p.id)?'on':''}" data-p="${p.id}" style="--c:${p.color}"><span class="sw"></span>${p.name}</button>`).join('');
+  $('plats').querySelectorAll('.pill').forEach(b=>b.onclick=()=>{const id=b.dataset.p; ativas=ativas.includes(id)?ativas.filter(x=>x!==id):[...ativas,id]; ls.set('plataformas_ativas',ativas); render();});
+  document.querySelectorAll('fieldset[data-mk]').forEach(f=>f.hidden=!f.dataset.mk.split(' ').some(id=>ativas.includes(id)));
+  let erro=''; const dados={};
+  PLATS.filter(p=>ativas.includes(p.id)).forEach(plat=>{
+    const r=resultadoPlat(plat,ctx);
+    if (r && r.erro){ erro=erro||r.erro; return; }
+    if (!r){ dados[plat.id]={vazio:true}; return; }
+    const pm=precoManual[plat.id]; const manual=modo==='preco'&&pm!=null&&pm!=='';
+    const preco=manual?(parseFloat(pm)||0):r.venda;
+    dados[plat.id]={...r, preco, manual, brk:breakdown(plat,preco,ctx,r.mk,r.toggle)};
+  });
+  $('erro').hidden=!erro; $('erro').textContent=erro;
+  const lucros=Object.entries(dados).filter(([,d])=>!d.vazio).map(([id,d])=>[id,d.brk.lucro]);
+  const best = lucros.length>1 ? lucros.sort((a,b)=>b[1]-a[1])[0][0] : null;
+  $('cards').innerHTML=PLATS.filter(p=>ativas.includes(p.id)).map(plat=>{
+    const d=dados[plat.id]; if(!d) return '';
+    if (d.vazio) return `<article class="card off" data-id="${plat.id}" style="--c:${plat.color}"><div class="head"><span class="badge">${plat.name}</span><div class="price-lbl">Preço final de venda</div><div class="price"><span>R$</span><input type="number" disabled placeholder="0,00"></div></div><div class="empty">${ctx.custo>0?'Este produto precisa de peso ou dimensões (aba Custos).':'Escolha um produto cadastrado.'}</div></article>`;
+    const b=d.brk; const segura=parseFloat(b.margem.toFixed(1))>=ctx.margemMin;
+    return `<article class="card ${best===plat.id?'best':''}" data-id="${plat.id}" style="--c:${plat.color}">
+      ${best===plat.id?'<span class="best-tag">🏆 Maior lucro</span>':''}
+      <div class="head">
+        <span class="badge">${plat.name}</span>
+        ${d.allowToggle?`<label class="fg-toggle"><span>🚚 Frete grátis (abaixo de R$ 79)<br><small>+${BRL(custoFreteML(ctx.peso,1,true))} de frete</small></span><input type="checkbox" data-fg="${plat.id}" ${d.toggle?'checked':''}></label>`:''}
+        <div class="card-prod" title="${esc(prodSel?prodSel.nome:'')}">${esc(prodSel?prodSel.nome:'')}${prodSel&&prodSel.sku!=='-'?`<small>SKU ${esc(prodSel.sku)}</small>`:''}</div>
+        <div class="price-lbl">Preço final de venda ✎</div>
+        <div class="price"><span>R$</span><input type="number" step="0.01" data-pm="${plat.id}" ${modo==="margem"?"readonly title=\"Preço calculado pela margem desejada\"":""} value="${d.manual?precoManual[plat.id]:d.preco.toFixed(2)}"></div>
+        ${d.manual&&modo==='preco'?`<button type="button" class="reset" data-reset="${plat.id}">↺ Voltar ao sugerido (${BRL(d.venda)})</button>`:'<div class="reset"></div>'}
+        <div class="kpis"><span class="kpi ${b.lucro>=0?'ok':'bad'}">Lucro ${BRL(b.lucro)}</span><span class="kpi ${segura?'neutral':'warn'}">Margem ${b.margem.toFixed(1)}%</span></div>
+      </div>
+      <div class="lines">
+        <div><span>Custo do produto</span><span class="v">${BRL(ctx.custo)}</span></div>
+        <div><span>Imposto (${ctx.imposto}%)</span><span class="v neg">−${BRL(b.imposto)}</span></div>
+        ${b.linhas.filter(l=>!l[2]).map(l=>`<div><span>${l[0]}</span><span class="v neg ${l[3]||''}">−${BRL(l[1])}</span></div>`).join('')}
+        <div class="total ${b.lucro<0?'bad':segura?'ok':'warn'}"><span>Margem</span><span class="v">${BRL(b.lucro)} <span class="sep">·</span> ${b.margem.toFixed(1).replace('.',',')}%</span></div>
+      </div></article>`;
+  }).join('');
+  $('cards').querySelectorAll('[data-pm]').forEach(i=>i.oninput=()=>{ if(modo!=='preco') return;precoManual[i.dataset.pm]=i.value; render(); const n=$('cards').querySelector(`[data-pm="${i.dataset.pm}"]`); if(n){n.focus(); n.setSelectionRange?.(n.value.length,n.value.length);} });
+  $('cards').querySelectorAll('[data-reset]').forEach(b=>b.onclick=()=>{delete precoManual[b.dataset.reset]; render();});
+  $('cards').querySelectorAll('[data-fg]').forEach(i=>i.onchange=()=>{freteGratis[i.dataset.fg]=i.checked; render();});
+  document.querySelectorAll('[data-pp]').forEach(i=>{ if(document.activeElement!==i) i.value=precoManual[i.dataset.pp.split(' ')[0]]??''; });
+  const mk={}; MK_IDS.forEach(id=>mk[id]=$(id).value); ls.set('params_marketing',mk);
+}
+function notificar(t){ const m=$('msg'); m.textContent=t; m.hidden=false; clearTimeout(notificar.t); notificar.t=setTimeout(()=>m.hidden=true,5000); }
+function selecionarProduto(id){ prodSel=produtos.find(p=>p.id==id)||null; syncPick(); precoManual={}; freteGratis={}; editId=null; render(); }
+
+// ===================== HISTÓRICO =====================
+function salvar(){
+  const ctx=ctxLive();
+  if(!prodSel||!(ctx.custo>0)){ $('erro').hidden=false; $('erro').textContent='Escolha um produto cadastrado na aba Custos.'; return; }
+  const plataformas={};
+  PLATS.filter(p=>ativas.includes(p.id)).forEach(plat=>{
+    const r=resultadoPlat(plat,ctx); if(!r||r.erro) return;
+    const pm=precoManual[plat.id]; const manual=modo==='preco'&&pm!=null&&pm!=='';
+    const preco=manual?(parseFloat(pm)||0):r.venda; const b=breakdown(plat,preco,ctx,r.mk,r.toggle);
+    plataformas[plat.id]={preco,lucro:b.lucro,margem:b.margem,manual,freteGratis:!!r.toggle};
+  });
+  const mk={}; MK_IDS.forEach(id=>mk[id]=$(id).value);
+  const prod={id:editId||Date.now(),prodId:prodSel.id,nome:prodSel.nome,cliente:prodSel.cliente||'',sku:prodSel.sku,custo:ctx.custo,margemObjetivo:ctx.margemMin,margemAlvo:ctx.margem,modo,plataformas,ativas:[...ativas],precoManual:{...precoManual},freteGratis:{...freteGratis},mk,data:new Date().toISOString()};
+  const era=editId; if(editId){ historico=historico.map(p=>p.id===editId?prod:p); } else { historico=[prod,...historico]; }
+  editId=null; renderHist(); Promise.resolve(persistSim(prod)).then(ok=>{ if(ok!==false) notificar(era?'Simulação atualizada.':'Simulação salva no histórico.'); });
+}
+function limpar(){ $('margemAlvo').value=''; ['cupomML','adsML','afML','cupomShopee','adsShopee','afShopee','cupomTiktok','adsTiktok','afTiktok','cupomShein','adsShein','afShein'].forEach(id=>$(id).value=0); prodSel=null; syncPick(); precoManual={};freteGratis={};editId=null; $('erro').hidden=true; render(); }
+function carregarHist(p){ if(p.mk) MK_IDS.forEach(id=>{ if(p.mk[id]!=null) $(id).value=p.mk[id]; });
+  prodSel=produtos.find(x=>x.id==p.prodId)||null; syncPick();
+  precoManual={...(p.precoManual||{})}; freteGratis={...(p.freteGratis||{})}; if(p.ativas?.length){ativas=[...p.ativas]; ls.set('plataformas_ativas',ativas);} editId=p.id; render(); showTab('calc'); window.scrollTo({top:0,behavior:'smooth'});
+  notificar(prodSel?`Editando "${p.nome}". Salvar vai atualizar o registro.`:`O produto "${p.nome}" não está mais cadastrado na aba Custos.`); }
+function renderHist(){
+  const q=$('busca').value.trim().toLowerCase(); const ord=$('ordem').value;
+  let lista=historico.filter(p=>(!contaSel||p.cliente===contaSel)&&(!q||p.nome.toLowerCase().includes(q)||(p.sku||'').toLowerCase().includes(q)));
+  if(ord==='nome') lista.sort((a,b)=>a.nome.localeCompare(b.nome)); else if(ord==='custo') lista.sort((a,b)=>b.custo-a.custo); else lista.sort((a,b)=>b.id-a.id);
+  $('histN').textContent=historico.filter(p=>!contaSel||p.cliente===contaSel).length; $('histEmpty').hidden=lista.length>0; $('histEmpty').textContent=historico.length?'Nenhum produto corresponde à busca.':'Nenhuma simulação salva. Escolha um produto e clique em "Salvar simulação".';
+  const cell=(p,id)=>{ const d=p.plataformas[id]; if(!d) return '<td class="n" style="color:var(--muted)">—</td>'; const ok=parseFloat(d.margem.toFixed(1))>=(p.margemObjetivo||0); return `<td class="n">${BRL(d.preco)}<br><span class="chip ${ok?'ok':'warn'}">${d.margem.toFixed(1)}%</span>${d.manual?' <span class="chip">✎</span>':''}</td>`; };
+  $('histBody').innerHTML=lista.map(p=>`<tr><td><strong>${esc(p.nome)}</strong>${p.sku&&p.sku!=='-'?`<br><span class="note">${esc(p.sku)}</span>`:''}</td><td>${esc(p.cliente||'—')}</td><td class="n">${BRL(p.custo)}</td>${['ml_premium','ml_classico','shopee','tiktok','shein'].map(id=>cell(p,id)).join('')}
+    <td>${confirmDel===p.id?`<span style="display:inline-flex;gap:4px"><button class="btn sm danger" data-del="${p.id}">Confirmar exclusão</button><button class="btn sm" data-cancel="1">Cancelar</button></span>`:`<button class="btn sm" data-edit="${p.id}">Abrir</button> <button class="btn sm danger" data-ask="${p.id}">Excluir</button>`}</td></tr>`).join('');
+  $('histBody').querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>carregarHist(historico.find(p=>p.id==b.dataset.edit)));
+  $('histBody').querySelectorAll('[data-ask]').forEach(b=>b.onclick=()=>{confirmDel=+b.dataset.ask; renderHist();});
+  $('histBody').querySelectorAll('[data-cancel]').forEach(b=>b.onclick=()=>{confirmDel=null; renderHist();});
+  $('histBody').querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{const id=b.dataset.del; const alvo=historico.find(p=>p.id==id); historico=historico.filter(p=>p.id!=id); confirmDel=null; renderHist(); Promise.resolve(removerSim(alvo?alvo.id:id)).then(ok=>{ if(ok!==false) notificar('Simulação removida.'); });});
+  atualizarBackup();
+}
+function atualizarBackup(){
+  $('bk').value=JSON.stringify({v:3,produtos,historico,contas,parametros}); }
+
+async function copiar(texto, okMsg, el){ try{ await navigator.clipboard.writeText(texto); notificar(okMsg); }catch(e){ if(el){ el.focus(); el.select(); } notificar('Não deu pra copiar automaticamente. O texto está selecionado: use Ctrl+C.'); } }
+function tsvHistorico(){
+  const cols=['Produto','SKU','Custo','ML Premium preço','ML Premium lucro','ML Premium margem %','ML Clássico preço','ML Clássico lucro','ML Clássico margem %','Shopee preço','Shopee lucro','Shopee margem %','TikTok preço','TikTok lucro','TikTok margem %','Shein preço','Shein lucro','Shein margem %'];
+  const f=v=>v==null?'':Number(v).toFixed(2).replace('.',',');
+  const rows=historico.map(p=>[p.nome,p.sku,f(p.custo),...['ml_premium','ml_classico','shopee','tiktok','shein'].flatMap(id=>{const d=p.plataformas[id];return d?[f(d.preco),f(d.lucro),f(d.margem)]:['','',''];})]);
+  return [cols,...rows].map(r=>r.join('\t')).join('\n');
+}
+
+// ===================== ABAS =====================
+document.querySelectorAll('nav.tabs button').forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
+function showTab(t){ document.querySelectorAll('nav.tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===t)); ['calc','custos','param','tabelas','acessos'].forEach(x=>$('tab-'+x).hidden=x!==t); }
+
+// ===================== CUSTOS: parâmetros gerais + produtos =====================
+function salvarGlobais(){ const g={}; G_IDS.forEach(id=>g[id]=$(id).value); g.gDevolucao=$('gDevolucao').checked; g.gEventos=$('gEventos').checked; parametros[contaSel||'_default']=g; persistParam(contaSel||'_default',g); render(); atualizarBackup(); }
+function aplicarGlobais(){ const g=paramDe(contaSel); G_IDS.forEach(id=>$(id).value=g[id]); $('gDevolucao').checked=!!g.gDevolucao; $('gEventos').checked=!!g.gEventos; $('paramTitulo').textContent=contaSel?`Parâmetros — ${contaSel}`:'Parâmetros padrão (sem conta selecionada)'; }
+G_IDS.forEach(id=>$(id).addEventListener('input',salvarGlobais)); $('gDevolucao').addEventListener('change',salvarGlobais); $('gEventos').addEventListener('change',salvarGlobais);
+
+function updCub(){ const v=cub({c:num('pC'),l:num('pL'),a:num('pA')}); $('pCubado').textContent=v?kg(v):'—'; }
+['pC','pL','pA'].forEach(id=>$(id).addEventListener('input',updCub));
+$('formProd').onsubmit=e=>{ e.preventDefault();
+  const nome=$('pNome').value.trim(), cmv=num('pCmv'), cliente=$('pCliente').value.trim();
+  if(!nome||!(cmv>0)||!cliente){ $('prodMsg').textContent='Informe o nome, a conta/cliente e o CMV do produto.'; return; }
+  if(!contas.includes(cliente)){ contasExtra=[...contasExtra,cliente]; persistConta(cliente); }
+  const prod={id:prodEdit||Date.now(),nome,cliente,sku:$('pSku').value.trim()||'-',cat:$('pCat').value.trim()||'Geral',cmv,peso:num('pPeso'),c:num('pC'),l:num('pL'),a:num('pA')};
+  produtos = prodEdit ? produtos.map(p=>p.id===prodEdit?prod:p) : [prod,...produtos];
+  const msg=prodEdit?'Produto atualizado.':'Produto cadastrado. Ele já aparece na calculadora.';
+  if(prodSel&&prodSel.id===prod.id) prodSel=prod;
+  recalcContas(); renderContas(); limparProd(); renderProd(); render();
+  Promise.resolve(persistProduto(prod)).then(ok=>{ $('prodMsg').textContent= ok===false?'Não foi salvo.':msg; }); };
+function limparProd(){ ['pNome','pSku','pCat','pCmv','pPeso','pC','pL','pA'].forEach(id=>$(id).value=''); $('pCliente').value=contaSel; prodEdit=null; $('btnProd').textContent='Cadastrar produto'; $('btnProdCancel').hidden=true; updCub(); }
+$('btnProdCancel').onclick=()=>{limparProd(); $('prodMsg').textContent='';};
+$('prodBusca').oninput=renderProd;
+function renderProd(){
+  const q=$('prodBusca').value.trim().toLowerCase();
+  const lista=visiveis().filter(p=>!q||[p.nome,p.sku,p.cat,p.cliente].join(' ').toLowerCase().includes(q));
+  $('prodN').textContent=visiveis().length; $('prodEmpty').hidden=lista.length>0;
+  $('prodBody').innerHTML=lista.map(p=>`<tr><td><strong>${esc(p.nome)}</strong></td><td>${esc(p.cliente||'—')}</td><td>${esc(p.sku)}</td><td><span class="chip">${esc(p.cat)}</span></td><td class="n">${BRL(p.cmv)}</td><td class="n">${p.peso?p.peso+' g':'—'}</td><td class="n">${cub(p)?[p.c,p.l,p.a].join(' × ')+' cm':'—'}</td><td class="n">${cub(p)?kg(cub(p)):'—'}</td><td class="n">${pesoFrete(p)?kg(pesoFrete(p)):'—'}${cub(p)>(p.peso||0)/1000&&cub(p)?' <span class="chip">cubado</span>':''}</td>
+    <td><button class="btn sm primary" data-use="${p.id}">Calcular</button> <button class="btn sm" data-pedit="${p.id}">Editar</button> <button class="btn sm danger" data-pdel="${p.id}">Excluir</button></td></tr>`).join('');
+  $('prodBody').querySelectorAll('[data-use]').forEach(b=>b.onclick=()=>{ selecionarProduto(b.dataset.use); showTab('calc'); window.scrollTo({top:0,behavior:'smooth'}); });
+  $('prodBody').querySelectorAll('[data-pedit]').forEach(b=>b.onclick=()=>{ const p=produtos.find(x=>x.id==b.dataset.pedit); prodEdit=p.id; $('pNome').value=p.nome;$('pCliente').value=p.cliente||'';$('pSku').value=p.sku==='-'?'':p.sku;$('pCat').value=p.cat;$('pCmv').value=p.cmv;$('pPeso').value=p.peso||'';$('pC').value=p.c||'';$('pL').value=p.l||'';$('pA').value=p.a||''; updCub(); $('btnProd').textContent='Salvar alterações'; $('btnProdCancel').hidden=false; $('pNome').focus(); });
+  $('prodBody').querySelectorAll('[data-pdel]').forEach(b=>b.onclick=()=>{ if(b.dataset.confirm){ const id=b.dataset.pdel; const alvo=produtos.find(p=>p.id==id); produtos=produtos.filter(p=>p.id!=id); if(prodSel&&prodSel.id==id) prodSel=null; recalcContas(); renderContas(); renderProd(); render(); removerProduto(alvo?alvo.id:id); } else { b.dataset.confirm='1'; b.textContent='Confirmar exclusão'; } });
+  $('catList').innerHTML=[...new Set(produtos.map(p=>p.cat))].map(c=>`<option value="${esc(c)}">`).join('');
+  $('contaList').innerHTML=contas.map(c=>`<option value="${esc(c)}">`).join('');
+  if(prodSel&&!visiveis().includes(prodSel)) prodSel=null;
+  syncPick();
+  atualizarBackup();
+}
+
+// ===================== TABELAS DE CUSTO =====================
+(function tabelas(){
+  $('tblShopee').innerHTML=[['Até R$ 9,00','20%','50% do preço'],['R$ 9,01 a 79,99','20%','R$ 4,50'],['R$ 80 a 99,99','14%','R$ 16,00'],['R$ 100 a 199,99','14%','R$ 20,00'],['A partir de R$ 200','14%','R$ 26,00']].map(r=>`<tr><td>${r[0]}</td><td class="n">${r[1]}</td><td class="n">${r[2]}</td></tr>`).join('');
+  let prev=0; $('tblShein').innerHTML=FRETE_SHEIN.map(([m,t])=>{const r=`<tr><td>${prev} a ${m} kg</td><td class="n">${BRL(t)}</td></tr>`; prev=m; return r;}).join('')+`<tr><td>Acima de 30 kg</td><td class="n">${BRL(106)}</td></tr>`;
+  const faixas=['R$ 0 a 18,99','R$ 19 a 48,99','R$ 49 a 78,99','R$ 79 a 99,99','R$ 100 a 119,99','R$ 120 a 149,99','R$ 150 a 199,99','A partir de R$ 200'];
+  $('tblML').querySelector('thead').innerHTML='<tr><th>Peso</th>'+faixas.map(f=>`<th class="n">${f}</th>`).join('')+'<th class="n">Frete grátis (&lt; R$ 79)</th></tr>';
+  $('tblML').querySelector('tbody').innerHTML=matrizFrete.map((l,i)=>{const nx=matrizFrete[i+1]; const lab=i===0?'Até 0,3 kg':nx?`${l.minWeight} a ${nx.minWeight} kg`:`Mais de ${l.minWeight} kg`; return `<tr><td>${lab}</td>${l.c.map(v=>`<td class="n">${BRL(v)}</td>`).join('')}<td class="n">${BRL(l.fg)}</td></tr>`;}).join('');
+})();
+
+// ===================== IMPORTAR / EXPORTAR PLANILHA DE CUSTO =====================
+const COLS=['Produto','Conta','SKU','Categoria','CMV','Peso (g)','Comprimento (cm)','Largura (cm)','Altura (cm)'];
+const dec=v=>v==null||v===''?'':String(v).replace('.',',');
+function tsvProdutos(lista){ return [COLS,...lista.map(p=>[p.nome,p.cliente,p.sku==='-'?'':p.sku,p.cat,dec(p.cmv),dec(p.peso||''),dec(p.c||''),dec(p.l||''),dec(p.a||'')])].map(r=>r.join('\t')).join('\n'); }
+function copiarTexto(t,msg,titulo){ $('exportTitulo').textContent=titulo||'Exportar'; $('exportTxt').value=t; $('exportBox').hidden=false; $('exportTxt').focus(); $('exportTxt').select();
+  return navigator.clipboard.writeText(t).then(()=>notificar(msg)).catch(()=>notificar('Copie manualmente: Ctrl+A e Ctrl+C no campo aberto.')); }
+$('exportCopiar').onclick=()=>{ const t=$('exportTxt'); t.focus(); t.select(); navigator.clipboard.writeText(t.value).then(()=>notificar('Copiado.')).catch(()=>{ try{ document.execCommand('copy'); notificar('Copiado.'); }catch(e){ notificar('Use Ctrl+C com o texto selecionado.'); } }); };
+$('exportFechar').onclick=()=>{ $('exportBox').hidden=true; };
+let downloadsNS=null; try{ window.claude?.use?.('downloads')?.then(d=>{downloadsNS=d;}).catch(()=>{}); }catch(e){}
+const hojeStr=()=>new Date().toISOString().slice(0,10);
+const slug=t=>String(t||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^A-Za-z0-9]+/g,'-').replace(/^-|-$/g,'')||'todas';
+async function baixarXlsx(nomeArq, aba, linhas, larguras, tsvFallback, tituloFallback){
+  const ws=XLSX.utils.aoa_to_sheet(linhas); if(larguras) ws['!cols']=larguras.map(w=>({wch:w}));
+  const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,aba.slice(0,31));
+  const buf=XLSX.write(wb,{bookType:'xlsx',type:'array'});
+  if(!downloadsNS && !window.claude){ try{ XLSX.writeFile(wb,nomeArq); notificar('Arquivo '+nomeArq+' baixado.'); return; }catch(e){} }
+  if(!downloadsNS){ return copiarTexto(tsvFallback,'Download indisponível nesta visualização. Tabela copiada pra colar no Excel.',tituloFallback); }
+  try{ await downloadsNS.save({filename:nomeArq,data:new Blob([buf])}); notificar('Arquivo '+nomeArq+' salvo.'); }
+  catch(e){ const c=e&&e.code;
+    if(c==='declined') notificar('Download cancelado.');
+    else if(c==='rate_limited') notificar('Já tem um download aguardando confirmação. Tente de novo em instantes.');
+    else copiarTexto(tsvFallback,'Não consegui gerar o arquivo aqui. Tabela copiada pra colar no Excel.',tituloFallback); }
+}
+const linhasProdutos=lista=>[COLS,...lista.map(p=>[p.nome,p.cliente,p.sku==='-'?'':p.sku,p.cat,p.cmv,p.peso||'',p.c||'',p.l||'',p.a||''])];
+$('btnProdExport').onclick=()=>{ const l=visiveis(); if(!l.length) return notificar('Nenhum produto pra exportar.'); baixarXlsx(`custos-${slug(contaSel)}-${hojeStr()}.xlsx`,'Custos',linhasProdutos(l),[34,18,14,16,10,10,16,14,12],tsvProdutos(l),'Planilha de custo — '+(contaSel||'todas as contas')); };
+$('btnProdModelo').onclick=()=>{ const ex=[{nome:'Exemplo de produto (apague esta linha)',cliente:contaSel||'Minha conta',sku:'SKU-01',cat:'Geral',cmv:22.5,peso:250,c:25,l:18,a:4}]; baixarXlsx('modelo-planilha-de-custo.xlsx','Custos',linhasProdutos(ex),[34,18,14,16,10,10,16,14,12],tsvProdutos(ex),'Modelo da planilha de custo'); };
+const numBR=v=>{ if(v==null||v==='') return 0; if(typeof v==='number') return v; const t=String(v).replace(/[R$\s]/g,''); return parseFloat(t.includes(',')?t.replace(/\./g,'').replace(',','.'):t)||0; };
+const norm=t=>String(t||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'');
+const COLMAP={nome:['produto','nome','nomedoproduto','item'],cliente:['conta','cliente','contacliente','loja'],sku:['sku','skuref','ref','referencia','codigo'],cat:['categoria','cat','linha'],cmv:['cmv','custo','custobase','custodoproduto','cmvr'],peso:['pesog','peso','pesoreal','pesorealg','pesogramas'],c:['comprimento','comprimentocm','c','compr','comprcm'],l:['largura','larguracm','l','larg','largcm'],a:['altura','alturacm','a','alt','altcm']};
+function importarLinhas(rows){
+  if(!rows.length) throw new Error('vazio');
+  const head=rows[0].map(norm); const idx={};
+  for(const [k,alts] of Object.entries(COLMAP)){ idx[k]=head.findIndex(h=>alts.includes(h)); }
+  if(idx.nome<0||idx.cmv<0) throw new Error('Não achei as colunas "Produto" e "CMV" no cabeçalho.');
+  const g=(r,k)=>idx[k]>=0?r[idx[k]]:'';
+  let novos=0, atual=0; const mudados=[];
+  rows.slice(1).forEach(r=>{ const nome=String(g(r,'nome')||'').trim(); if(!nome) return;
+    const cliente=String(g(r,'cliente')||'').trim()||contaSel||'Sem conta'; const cmv=numBR(g(r,'cmv')); if(!(cmv>0)) return;
+    const prod={nome,cliente,sku:String(g(r,'sku')||'').trim()||'-',cat:String(g(r,'cat')||'').trim()||'Geral',cmv,peso:numBR(g(r,'peso')),c:numBR(g(r,'c')),l:numBR(g(r,'l')),a:numBR(g(r,'a'))};
+    const ex=produtos.find(p=>p.nome.toLowerCase()===nome.toLowerCase()&&p.cliente===cliente);
+    if(ex){ Object.assign(ex,prod); atual++; mudados.push(ex); } else { const n={id:Date.now()+Math.floor(Math.random()*1e6),...prod}; produtos.push(n); novos++; mudados.push(n); } });
+  recalcContas();
+  return {novos,atual,mudados};
+}
+$('prodImport').onchange=async e=>{ const f=e.target.files[0]; if(!f) return; $('prodImportMsg').textContent='Lendo '+f.name+'…';
+  try{ let rows;
+    if(/\.(xlsx|xls)$/i.test(f.name)){ const wb=XLSX.read(await f.arrayBuffer(),{type:'array'}); rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,raw:true,defval:''}); }
+    else { const txt=await f.text(); const sep=txt.includes('\t')?'\t':(txt.split('\n')[0].split(';').length>txt.split('\n')[0].split(',').length?';':','); rows=txt.split(/\r?\n/).filter(l=>l.trim()).map(l=>l.split(sep).map(x=>x.replace(/^"|"$/g,''))); }
+    const r=importarLinhas(rows); renderContas(); renderProd(); render();
+    let ok=true; if(ST.db){ $('prodImportMsg').textContent=`Salvando ${r.mudados.length} produto(s) no banco…`; ok=await persistMuitos(r.mudados,persistProduto); } else ls.set('produtos_cadastrados',produtos);
+    $('prodImportMsg').textContent= ok?`Importado: ${r.novos} novo(s), ${r.atual} atualizado(s).`:'A importação parou no meio: parte dos produtos não foi salva.'; if(ok) notificar(`Planilha importada: ${r.novos} novo(s), ${r.atual} atualizado(s).`);
+  }catch(err){ $('prodImportMsg').textContent='Não consegui importar: '+(err.message||'arquivo inválido')+'. Use o modelo (botão "Baixar modelo").'; }
+  e.target.value=''; };
+
+// ===================== CONTAS =====================
+function renderContas(){ $('contaSel').innerHTML='<option value="">Todas as contas</option>'+contas.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join(''); $('contaSel').value=contaSel; }
+function selecionarConta(c){ contaSel=c; ls.set('conta_sel',c); aplicarGlobais(); renderProd(); if(!prodSel||!visiveis().includes(prodSel)){ prodSel=visiveis()[0]||null; precoManual={}; freteGratis={}; } syncPick(); $('pCliente').value=contaSel; render(); renderHist(); }
+$('contaSel').onchange=()=>selecionarConta($('contaSel').value);
+$('btnNovaConta').onclick=()=>{ $('novaContaBox').hidden=false; $('novaContaNome').focus(); };
+$('btnContaCancel').onclick=()=>{ $('novaContaBox').hidden=true; $('novaContaNome').value=''; };
+$('btnContaOk').onclick=()=>{ const n=$('novaContaNome').value.trim(); if(!n) return; if(!contas.includes(n)){ contasExtra=[...contasExtra,n]; recalcContas(); persistConta(n); } renderContas(); $('novaContaBox').hidden=true; $('novaContaNome').value=''; selecionarConta(n); notificar(`Conta "${n}" criada e selecionada. Cadastre os produtos e os parâmetros dela.`); };
+$('novaContaNome').onkeydown=e=>{ if(e.key==='Enter'){ e.preventDefault(); $('btnContaOk').click(); } };
+
+// ===================== EVENTOS / INIT =====================
+MK_IDS.forEach(id=>$(id).addEventListener('input',render));
+$('margemAlvo').addEventListener('input',render);
+document.querySelectorAll('.seg.modo button').forEach(b=>b.onclick=()=>{ modo=b.dataset.modo; ls.set('modo_preco',modo); render(); (modo==='margem'?$('margemAlvo'):document.querySelector('.ppbox:not([hidden]) input'))?.focus(); });
+document.querySelectorAll('[data-pp]').forEach(i=>i.addEventListener('input',()=>{ i.dataset.pp.split(' ').forEach(id=>{ if(i.value==='') delete precoManual[id]; else precoManual[id]=i.value; }); render(); }));
+let pickBy='nome', pickAtivo=-1;
+function syncPick(){ $('pickBusca').value=prodSel?(pickBy==='sku'&&prodSel.sku!=='-'?prodSel.sku:prodSel.nome):''; fecharPick(); }
+function fecharPick(){ $('pickLista').hidden=true; $('pickBusca').setAttribute('aria-expanded','false'); pickAtivo=-1; }
+const destacar=(txt,q)=>{ const t=String(txt); if(!q) return esc(t); const i=t.toLowerCase().indexOf(q.toLowerCase()); return i<0?esc(t):esc(t.slice(0,i))+'<mark>'+esc(t.slice(i,i+q.length))+'</mark>'+esc(t.slice(i+q.length)); };
+function abrirPick(){
+  const q=$('pickBusca').value.trim(); const ql=q.toLowerCase();
+  const campo=p=>pickBy==='sku'?(p.sku==='-'?'':p.sku):p.nome;
+  let lista=visiveis();
+  if(ql) lista=lista.filter(p=>campo(p).toLowerCase().includes(ql)).sort((a,b)=>campo(a).toLowerCase().indexOf(ql)-campo(b).toLowerCase().indexOf(ql));
+  lista=lista.slice(0,50);
+  $('pickLista').innerHTML = lista.length ? lista.map((p,i)=>`<button type="button" role="option" data-pid="${p.id}" class="${i===pickAtivo?'act':''}"><span>${pickBy==='nome'?destacar(p.nome,q):esc(p.nome)}</span><small>SKU ${pickBy==='sku'?destacar(p.sku,q):esc(p.sku)} · ${esc(p.cliente||'—')} · CMV ${BRL(p.cmv)}</small></button>`).join('')
+    : `<div class="vazio">${visiveis().length?'Nenhum produto com esse '+(pickBy==='sku'?'SKU':'nome')+'.':'Nenhum produto cadastrado nesta conta. Cadastre na aba Produtos.'}</div>`;
+  $('pickLista').hidden=false; $('pickBusca').setAttribute('aria-expanded','true');
+  $('pickLista').querySelectorAll('[data-pid]').forEach(b=>b.onmousedown=e=>{ e.preventDefault(); selecionarProduto(b.dataset.pid); });
+}
+$('pickBusca').addEventListener('input',()=>{ pickAtivo=-1; abrirPick(); });
+$('pickBusca').addEventListener('focus',()=>{ $('pickBusca').select(); abrirPick(); });
+$('pickBusca').addEventListener('blur',()=>setTimeout(syncPick,120));
+$('pickBusca').addEventListener('keydown',e=>{ const itens=[...$('pickLista').querySelectorAll('[data-pid]')];
+  if(e.key==='ArrowDown'||e.key==='ArrowUp'){ e.preventDefault(); if($('pickLista').hidden) abrirPick(); pickAtivo=Math.max(0,Math.min(itens.length-1,pickAtivo+(e.key==='ArrowDown'?1:-1))); itens.forEach((b,i)=>b.classList.toggle('act',i===pickAtivo)); itens[pickAtivo]?.scrollIntoView({block:'nearest'}); }
+  else if(e.key==='Enter'){ e.preventDefault(); const b=itens[pickAtivo>=0?pickAtivo:0]; if(b){ selecionarProduto(b.dataset.pid); $('pickBusca').blur(); } }
+  else if(e.key==='Escape'){ syncPick(); $('pickBusca').blur(); } });
+document.querySelectorAll('.pickhead .seg button').forEach(b=>b.onclick=()=>{ pickBy=b.dataset.by; document.querySelectorAll('.pickhead .seg button').forEach(x=>x.setAttribute('aria-pressed',x===b)); $('pickBusca').placeholder=pickBy==='sku'?'Digite o SKU':'Digite o nome do produto'; $('pickBusca').value=''; $('pickBusca').focus(); abrirPick(); });
+$('btnSalvar').onclick=salvar; $('btnNova').onclick=limpar;
+$('busca').oninput=renderHist; $('ordem').onchange=renderHist;
+$('btnExcel').onclick=()=>{ const lista=historico.filter(p=>!contaSel||p.cliente===contaSel); if(!lista.length) return notificar('Histórico vazio.');
+  const ids=['ml_premium','ml_classico','shopee','tiktok','shein'], nomes=['ML Premium','ML Clássico','Shopee','TikTok','Shein'];
+  const head=['Produto','Conta','SKU','Custo',...nomes.flatMap(n=>[n+' preço',n+' lucro',n+' margem %'])];
+  const r2=v=>v==null?'':Math.round(v*100)/100;
+  const rows=lista.map(p=>[p.nome,p.cliente||'',p.sku==='-'?'':p.sku,r2(p.custo),...ids.flatMap(id=>{const d=p.plataformas[id];return d?[r2(d.preco),r2(d.lucro),r2(d.margem)]:['','',''];})]);
+  baixarXlsx(`simulacoes-${slug(contaSel)}-${hojeStr()}.xlsx`,'Simulações',[head,...rows],[34,16,12,10,...ids.flatMap(()=>[13,13,13])],tsvHistorico(),'Histórico de simulações'); };
+$('btnBkCopy').onclick=()=>copiar($('bk').value,'Backup copiado.',$('bk'));
+async function importarDados(d){ const arrH=Array.isArray(d)?d:(d.historico||[]), arrP=Array.isArray(d)?[]:(d.produtos||[]);
+  const idsH=new Set(historico.map(p=>String(p.id))), idsP=new Set(produtos.map(p=>String(p.id)));
+  const nH=arrH.filter(p=>p&&p.id&&p.nome&&!idsH.has(String(p.id))), nP=arrP.filter(p=>p&&p.id&&p.nome&&!idsP.has(String(p.id)));
+  nP.forEach(p=>{ if(!p.cliente) p.cliente='Sem conta'; });
+  historico=[...nH,...historico]; produtos=[...nP,...produtos];
+  const novasContas=(d.contas||[]).filter(c=>c&&!contasExtra.includes(c)); contasExtra=[...contasExtra,...novasContas];
+  const novosParam=Object.entries(d.parametros||{}); novosParam.forEach(([k,v])=>parametros[k]=v);
+  recalcContas(); renderContas(); aplicarGlobais(); renderProd(); renderHist(); render();
+  if(ST.db){ let ok=await persistMuitos(nP,persistProduto) && await persistMuitos(nH,persistSim) && await persistMuitos(novasContas,persistConta);
+    if(ok) for(const [k,v] of novosParam){ ok = await grava(ST.db.collection('parametros').doc(k==='_default'?'_default':contaDocId(k)),{...v,conta:k}); if(!ok) break; }
+    if(!ok) return null; }
+  else { ls.set('simulacoes_salvas',historico); ls.set('produtos_cadastrados',produtos); ls.set('contas',contasExtra); ls.set('parametros_por_conta',parametros); }
+  return {p:nP.length,h:nH.length}; }
+$('btnBkLoad').onclick=async()=>{ let d; try{ d=JSON.parse($('bk').value); }catch(e){ return notificar('Backup inválido. Cole exatamente o texto copiado da calculadora.'); }
+  const r=await importarDados(d); if(r) notificar(`${r.p} produto(s) e ${r.h} simulação(ões) importados.`); };
+$('btnTheme').onclick=()=>{ const r=document.documentElement; const dark=r.dataset.theme==='dark'||(!r.dataset.theme&&matchMedia('(prefers-color-scheme: dark)').matches); r.dataset.theme=dark?'light':'dark'; ls.set('tema',r.dataset.theme); };
+
+(function init(){ const t=ls.get('tema',null); if(t) document.documentElement.dataset.theme=t;
+  const mk=ls.get('params_marketing',null); if(mk) MK_IDS.forEach(id=>{ if(mk[id]!=null&&mk[id]!=='') $(id).value=mk[id]; });
+  produtos.forEach(p=>{ if(!p.cliente) p.cliente='Sem conta'; }); recalcContas();
+  if(contaSel&&!contas.includes(contaSel)) contaSel='';
+  setSync('','Conectando ao banco compartilhado…');
+  renderContas(); aplicarGlobais(); renderProd(); prodSel=visiveis()[0]||null; syncPick(); $('pCliente').value=contaSel; updCub(); render(); renderHist();
+  conectarBanco(); })();
+
+// ===================== BANCO COMPARTILHADO =====================
+function aposDados(){ recalcContas(); if(contaSel&&!contas.includes(contaSel)&&(ST.modo!=='db'||ST.carregado)){ contaSel=''; ls.set('conta_sel',''); }
+  if(prodSel){ prodSel=produtos.find(p=>String(p.id)===String(prodSel.id))||null; }
+  if(!prodSel) prodSel=visiveis()[0]||null;
+  renderContas(); if(document.activeElement?.closest?.('#tab-param')==null) aplicarGlobais(); renderProd(); render(); renderHist(); }
+function localTemDados(){ const lp=ls.get('produtos_cadastrados',[]), lh=ls.get('simulacoes_salvas',[]); return {lp,lh,tem:(lp.length+lh.length)>0}; }
+const SB = window.supabase.createClient('https://rwkwnjnzbnyhtrpqgimh.supabase.co','sb_publishable_dpaHFCA1ZlZtHEQ5dkCAbg_ffL_4zDY',{auth:{persistSession:true,autoRefreshToken:true}});
+function erroSB(e){ const c=String(e&&e.code||''); return {code:(c==='42501'||/row-level security|permission/i.test((e&&e.message)||''))?'invalid_argument':'unavailable', message:e&&e.message}; }
+function bancoSupabase(){ return { collection(nome){ return {
+  doc(id){ return {
+    set: async data=>{ const {error}=await SB.from(nome).upsert({id:String(id),data}); if(error) throw erroSB(error); },
+    delete: async()=>{ const {error}=await SB.from(nome).delete().eq('id',String(id)); if(error) throw erroSB(error); } }; },
+  onSnapshot(next,erro){ let linhas=new Map(), vivo=true;
+    const emitir=()=>{ if(vivo) next({docs:[...linhas.values()].map(r=>({id:r.id,data:()=>r.data})),metadata:{fromCache:false}}); };
+    const carregar=async()=>{ let todas=[],de=0; for(;;){ const {data,error}=await SB.from(nome).select('id,data').range(de,de+999); if(error){ erro&&erro(erroSB(error)); return; } todas=todas.concat(data); if(data.length<1000) break; de+=1000; }
+      linhas=new Map(todas.map(r=>[r.id,r])); emitir(); };
+    const canal=SB.channel('rt-'+nome).on('postgres_changes',{event:'*',schema:'public',table:nome},p=>{
+        if(p.eventType==='DELETE'){ if(p.old&&p.old.id!=null) linhas.delete(p.old.id); } else if(p.new){ linhas.set(p.new.id,{id:p.new.id,data:p.new.data}); }
+        emitir(); }).subscribe(st=>{ if(st==='SUBSCRIBED') carregar(); });
+    carregar();
+    return ()=>{ vivo=false; SB.removeChannel(canal); }; } }; } }; }
+
+// ---------- login ----------
+function mostrarLogin(msg,erro){ $('loginBox').hidden=false; if(msg) $('loginInfo').textContent=msg; $('loginErro').hidden=!erro; $('loginErro').textContent=erro||''; setTimeout(()=>$('loginEmail').focus(),50); }
+function traduzAuth(e){ const m=(e&&e.message)||''; if(/Invalid login/i.test(m)) return 'E-mail ou senha incorretos. Se é seu primeiro acesso, clique em "Primeiro acesso".';
+  if(/not confirmed/i.test(m)) return 'Este e-mail ainda não foi liberado. Peça ao administrador da calculadora.'; if(/already registered/i.test(m)) return 'Este e-mail já tem senha. Use "Entrar".';
+  if(/Password should be/i.test(m)) return 'A senha precisa ter pelo menos 6 caracteres.'; if(/rate limit/i.test(m)) return 'Muitas tentativas seguidas. Espere alguns minutos e tente de novo.'; return 'Não consegui entrar: '+m; }
+$('loginForm').onsubmit=async e=>{ e.preventDefault(); $('btnEntrar').disabled=true;
+  const {data,error}=await SB.auth.signInWithPassword({email:$('loginEmail').value.trim().toLowerCase(),password:$('loginSenha').value});
+  $('btnEntrar').disabled=false; if(error) return mostrarLogin(null,traduzAuth(error)); iniciarComSessao(data.session); };
+$('btnPrimeiro').onclick=async()=>{ const email=$('loginEmail').value.trim().toLowerCase(), senha=$('loginSenha').value;
+  if(!email||senha.length<6) return mostrarLogin(null,'Preencha o e-mail liberado e uma senha de pelo menos 6 caracteres.');
+  $('btnPrimeiro').disabled=true; const {data,error}=await SB.auth.signUp({email,password:senha}); $('btnPrimeiro').disabled=false;
+  if(error) return mostrarLogin(null,traduzAuth(error));
+  if(data.session) return iniciarComSessao(data.session);
+  const r=await SB.auth.signInWithPassword({email,password:senha}); if(r.data&&r.data.session) return iniciarComSessao(r.data.session);
+  mostrarLogin(null,'Senha criada, mas este e-mail ainda não está liberado. Peça ao administrador pra liberar e depois clique em "Entrar".'); };
+$('btnSair').onclick=async()=>{ await SB.auth.signOut(); location.reload(); };
+
+let sessaoIniciada=false;
+async function iniciarComSessao(session){ if(sessaoIniciada) return;
+  const {data:membro,error}=await SB.rpc('is_membro');
+  if(error||!membro){ await SB.auth.signOut(); return mostrarLogin(null,'Seu e-mail ainda não está liberado nesta calculadora. Peça acesso ao administrador.'); }
+  sessaoIniciada=true; $('loginBox').hidden=true; $('userEmail').textContent=session.user.email;
+  const {data:adm}=await SB.rpc('is_admin'); ST.admin=!!adm; $('tabAcessos').hidden=!ST.admin; if(ST.admin) assinarMembros();
+  ligarBanco(bancoSupabase()); }
+
+async function conectarBanco(){ ST.modo='db'; setSync('','Conectando…');
+  const {data:{session}}=await SB.auth.getSession();
+  if(!session) return mostrarLogin(); iniciarComSessao(session); }
+
+function ligarBanco(db){
+  ST.db=db; ST.modo='db'; ST.podeEscrever=true;
+  produtos=[]; historico=[]; contasExtra=[]; parametros={}; aposDados();
+  const pend=new Set(['produtos','simulacoes','contas','parametros']);
+  const timer=setTimeout(()=>{ if(pend.size) setSync('warn','O banco ainda não respondeu. Os dados podem estar desatualizados.'); },10000);
+  const pronto=(nome,snap)=>{ if(!snap.metadata.fromCache && pend.delete(nome) && !pend.size){ clearTimeout(timer); ST.carregado=true; aposDados();
+      setSync('ok','Dados compartilhados · sincronizado'); oferecerMigracao(); } };
+  const falhou=e=>{ clearTimeout(timer); setSync('bad','Não consegui ler o banco. Recarregue a página.'); };
+  db.collection('produtos').onSnapshot(snap=>{ produtos=snap.docs.map(d=>({...d.data()})); produtos.forEach(p=>{ if(!p.cliente) p.cliente='Sem conta'; }); aposDados(); pronto('produtos',snap); },falhou);
+  db.collection('simulacoes').onSnapshot(snap=>{ historico=snap.docs.map(d=>({...d.data()})); renderHist(); pronto('simulacoes',snap); },falhou);
+  db.collection('contas').onSnapshot(snap=>{ contasExtra=snap.docs.map(d=>d.data().nome).filter(Boolean); aposDados(); pronto('contas',snap); },falhou);
+  db.collection('parametros').onSnapshot(snap=>{ const m={}; snap.docs.forEach(d=>{ const v={...d.data()}; const k=v.conta||d.id; delete v.conta; m[k]=v; }); parametros=m; if(document.activeElement?.closest?.('#tab-param')==null) aplicarGlobais(); render(); pronto('parametros',snap); },falhou);
+}
+
+// ---------- acessos (admin) ----------
+let membros=[];
+async function carregarMembros(){ const {data,error}=await SB.from('membros').select('email,admin,criado_em').order('email'); if(!error){ membros=data; renderMembros(); } }
+function assinarMembros(){ carregarMembros(); SB.channel('rt-membros').on('postgres_changes',{event:'*',schema:'public',table:'membros'},carregarMembros).subscribe(); }
+function renderMembros(){ const eu=$('userEmail').textContent.toLowerCase();
+  $('membrosBody').innerHTML=membros.map(m=>`<tr><td>${esc(m.email)}${m.email===eu?' <span class="chip">você</span>':''}</td><td>${m.admin?'<span class="chip ok">Administrador</span>':'<span class="chip">Usuário</span>'}</td><td>${new Date(m.criado_em).toLocaleDateString('pt-BR')}</td><td>${m.email===eu?'':`<button class="btn sm" data-madm="${esc(m.email)}">${m.admin?'Tirar admin':'Tornar admin'}</button> <button class="btn sm danger" data-mdel="${esc(m.email)}">Remover acesso</button>`}</td></tr>`).join('');
+  $('membrosBody').querySelectorAll('[data-mdel]').forEach(b=>b.onclick=async()=>{ if(!b.dataset.confirm){ b.dataset.confirm='1'; b.textContent='Confirmar remoção'; return; }
+    const {error}=await SB.from('membros').delete().eq('email',b.dataset.mdel); if(error) notificar('Não consegui remover: '+error.message); else { notificar('Acesso removido.'); carregarMembros(); } });
+  $('membrosBody').querySelectorAll('[data-madm]').forEach(b=>b.onclick=async()=>{ const m=membros.find(x=>x.email===b.dataset.madm);
+    const {error}=await SB.from('membros').update({admin:!m.admin}).eq('email',m.email); if(error) notificar('Não consegui alterar: '+error.message); else carregarMembros(); }); }
+$('formMembro').onsubmit=async e=>{ e.preventDefault(); const email=$('mEmail').value.trim().toLowerCase();
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return notificar('Digite um e-mail válido.');
+  const {error}=await SB.from('membros').insert({email,admin:$('mAdmin').checked});
+  if(error) return notificar(error.code==='23505'?'Esse e-mail já está liberado.':'Não consegui liberar: '+error.message);
+  $('mEmail').value=''; $('mAdmin').checked=false; notificar(`Acesso liberado pra ${email}. Avise a pessoa pra clicar em "Primeiro acesso".`); carregarMembros(); };
+
+function oferecerMigracao(){ if(!ST.podeEscrever||ls.get('migrado_banco',false)) return; const {lp,lh,tem}=localTemDados(); if(!tem) return;
+  const idsP=new Set(produtos.map(p=>String(p.id))), idsH=new Set(historico.map(p=>String(p.id)));
+  const fp=lp.filter(p=>!idsP.has(String(p.id))).length, fh=lh.filter(p=>!idsH.has(String(p.id))).length; if(!fp&&!fh) return;
+  $('migraTxt').textContent=`Você tem ${fp} produto(s) e ${fh} simulação(ões) salvos só neste navegador. Envie pro banco pra que todos da equipe vejam.`; $('migraBox').hidden=false; }
+$('btnMigraNao').onclick=()=>{ $('migraBox').hidden=true; };
+$('btnMigrar').onclick=async()=>{ $('btnMigrar').disabled=true; $('migraTxt').textContent='Enviando…';
+  const r=await importarDados({v:3,produtos:ls.get('produtos_cadastrados',[]),historico:ls.get('simulacoes_salvas',[]),contas:ls.get('contas',[]),parametros:ls.get('parametros_por_conta',{})});
+  $('btnMigrar').disabled=false; if(r){ ls.set('migrado_banco',true); $('migraBox').hidden=true; notificar(`Enviados: ${r.p} produto(s) e ${r.h} simulação(ões).`); } else { $('migraTxt').textContent='O envio parou no meio. Tente de novo.'; } };
+</script>
+
+</body></html>
