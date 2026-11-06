@@ -496,9 +496,10 @@ function custoFreteML(peso, preco, freteGratis){
   return linha.c[i];
 }
 // pctExtra = margem + imposto + cupom + ads + afiliados (tudo que é % do preço, fora a comissão do canal)
-function precoML(custo, peso, pctExtra, comissao, freteGratis){
+function precoML(custo, peso, pctExtra, comissao, freteGratis, freteFixo){
   const s=(pctExtra+comissao)/100;
   if (s>=1) return {erro:'A soma de margem + imposto + comissão + cupom + ads + afiliados supera 100%.'};
+  if (freteFixo!=null) return {venda:(custo+freteFixo)/(1-s), custoFrete:freteFixo};
   let p=custo/(1-s), ant=0, it=0, frete=0;
   while (Math.abs(p-ant)>0.01 && it<100){ ant=p; frete=custoFreteML(peso,p,freteGratis); p=(custo+frete)/(1-s); it++; }
   if (it>=100) return {erro:'Erro de convergência no Mercado Livre.'};
@@ -539,13 +540,14 @@ const rebLine=(p,mk)=>{ const rb=mk.rebateR>0?mk.rebateR:p*(mk.rebate||0)/100; r
 const mkLines=(p,mk)=>[mk.cupomR>0?['Cupom ('+fmtR(mk.cupomR)+')',mk.cupomR,false]:['Cupom ('+mk.cupom+'%)',p*mk.cupom/100,mk.cupom===0],['Ads ('+mk.ads+'%)',p*mk.ads/100,mk.ads===0,'hl'],['Afiliados ('+mk.af+'%)',p*mk.af/100,mk.af===0],rebLine(p,mk)];
 // margem é sobre o preço líquido (preço − imposto): lucro = m × P × (1 − imposto), então entra como m × (1 − imposto) na soma de % do preço
 const extra=(ctx,mk)=>ctx.margem*(1-ctx.imposto/100)+ctx.imposto+mk.cupom+mk.ads+mk.af-(mk.rebate||0);
-function detML(p,ctx,mk,fg,com){ const cv=p*com/100, fr=custoFreteML(ctx.peso,p,fg); const m=mkLines(p,mk);
+function detML(p,ctx,mk,fg,com,fixo){ const cv=p*com/100, fr=(fixo&&ctx.freteFixoML!=null)?ctx.freteFixoML:custoFreteML(ctx.peso,p,fg); const m=mkLines(p,mk);
   return {custos:[cv,fr,...m.map(x=>x[1])], linhas:[['Comissão ('+com+'%)',cv],['Custo de frete',fr],...m]}; }
 const PLATS=[
  {id:'ml_premium',name:'ML Premium',color:'var(--ml-prem)',mk:'ML',freteGratis:true,
-  calc:(c,mk)=>{ if(!(c.peso>0)) return null; return precoML(c.custo,c.peso,extra(c,mk),c.comPrem,false); },
-  calcFG:(c,mk)=>precoML(c.custo,c.peso,extra(c,mk),c.comPrem,true),
-  det:(p,c,mk,fg)=>detML(p,c,mk,fg,c.comPrem)},
+  // o frete do Premium é o mesmo do Clássico (mesmo anúncio/peso): usa o frete calculado no card do Clássico
+  calc:(c,mk)=>{ if(!(c.peso>0)) return null; return precoML(c.custo,c.peso,extra(c,mk),c.comPrem,false,c.freteFixoML); },
+  calcFG:(c,mk)=>precoML(c.custo,c.peso,extra(c,mk),c.comPrem,true,c.freteFixoML),
+  det:(p,c,mk,fg)=>detML(p,c,mk,fg,c.comPrem,true)},
  {id:'ml_classico',name:'ML Clássico',color:'var(--ml-clas)',mk:'ML',freteGratis:true,
   calc:(c,mk)=>{ if(!(c.peso>0)) return null; return precoML(c.custo,c.peso,extra(c,mk),c.comClas,false); },
   calcFG:(c,mk)=>precoML(c.custo,c.peso,extra(c,mk),c.comClas,true),
@@ -618,7 +620,13 @@ const kg=v=>v>=1?v.toLocaleString('pt-BR',{maximumFractionDigits:3})+' kg':Math.
 
 function globais(){ const g=paramDe(prodSel?prodSel.cliente:contaSel); const n=v=>parseFloat(v)||0; const alvo=modo==='margem'?$('margemAlvo').value:''; const min=n(g.gMargem); return {imposto:n(g.gImposto),margemMin:min,margem:alvo!==''?(parseFloat(alvo)||0):min,antecipa:n(g.gAntecipa),devolucao:!!g.gDevolucao,eventos:!!g.gEventos,comShein:n(g.gComShein)}; }
 function ctxLive(){ const g=globais(); const p=prodSel||{cmv:0,peso:0,c:0,l:0,a:0};
-  return {...g, custo:p.cmv||0, peso:pesoFrete(p), comPrem:num('comPrem'), comClas:num('comClas')}; }
+  const ctx={...g, custo:p.cmv||0, peso:pesoFrete(p), comPrem:num('comPrem'), comClas:num('comClas')};
+  ctx.freteFixoML=freteDoClassico(ctx); return ctx; }
+// frete que o card do Clássico está usando (preço praticado ou sugerido, com ou sem frete grátis)
+function freteDoClassico(ctx){ if(!(ctx.custo>0)||!(ctx.peso>0)) return null;
+  const pl=PLATS.find(x=>x.id==='ml_classico'); const r=resultadoPlat(pl,ctx); if(!r||r.erro) return null;
+  const pm=precoManual.ml_classico; const manual=modo==='preco'&&pm!=null&&pm!=='';
+  const preco=manual?(parseFloat(pm)||0):r.venda; return custoFreteML(ctx.peso,preco,!!r.toggle); }
 function mkOf(plat){ const k=plat.mk; const rb=$('rebate'+k); const uc=$('uCupom'+k).value, ur=$('uRebate'+k)?.value||'%';
   const cup=num('cupom'+k), reb=rb?(parseFloat(rb.value)||0):0;
   return {cupom:uc==='%'?cup:0, cupomR:uc==='R$'?cup:0, ads:num('ads'+k), af:num('af'+k), rebate:ur==='%'?reb:0, rebateR:ur==='R$'?reb:0}; }
@@ -628,7 +636,7 @@ function resultadoPlat(plat, ctx){
   if (!(ctx.custo>0)) return null;
   const mk=mkOf(plat);
   const cc=ctxCalc(ctx,mk); const base=plat.calc(cc,mk); if(!base || base.erro) return base;
-  const allowToggle = plat.freteGratis && base.venda<79;
+  const allowToggle = plat.freteGratis && base.venda<79 && !(plat.id==='ml_premium' && ctx.freteFixoML!=null);
   const toggle = allowToggle && !!freteGratis[plat.id];
   const res = toggle ? plat.calcFG(cc,mk) : base;
   if (res.erro) return res;
