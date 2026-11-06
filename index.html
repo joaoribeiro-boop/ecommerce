@@ -140,7 +140,7 @@ label.f input:focus,select.sel:focus{outline:2px solid var(--accent);outline-off
 .lines div{display:flex;justify-content:space-between;gap:8px;padding-bottom:6px;border-bottom:1px solid var(--line)}
 .lines div:last-child{border:0;padding-bottom:0}
 .lines .v{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
-.lines .neg{color:var(--bad)} .lines .hl{color:var(--c)}
+.lines .neg{color:var(--bad)} .lines .rebate{color:var(--ok)} .lines .hl{color:var(--c)}
 .lines .total{font-weight:700;font-size:14px;border:0;border-radius:7px;padding:8px 10px;margin-top:4px;align-items:center}
 .lines .total .v{font-size:16px}
 .lines .total .sep{opacity:.5;margin:0 2px}
@@ -240,9 +240,10 @@ details summary{cursor:pointer;font-weight:600;font-size:13px}
   <fieldset class="sec" data-mk="ml_premium ml_classico">
     <legend><span class="dot" style="background:var(--ml-clas)"></span>Mercado Livre</legend>
     <label class="f pp ppbox">Preço praticado (R$)<input type="number" step="0.01" min="0" data-pp="ml_premium ml_classico" placeholder="vazio = sugerido pela margem mínima"></label>
-    <div class="row">
+    <div class="row3">
       <label class="f">Comissão Premium (%)<input type="number" step="0.1" id="comPrem" value="17"></label>
       <label class="f">Comissão Clássico (%)<input type="number" step="0.1" id="comClas" value="12"></label>
+      <label class="f" title="Valor que o Mercado Livre devolve em campanhas com co-participação, em % do preço">Rebate (%)<input type="number" step="0.1" min="0" id="rebateML" value="0"></label>
     </div>
     <div class="row3">
       <label class="f">Cupom (%)<input type="number" step="0.1" min="0" id="cupomML" value="0"></label>
@@ -487,9 +488,9 @@ function precoShein(custo, peso, pctExtra, comissao){
 // mk = {cupom, ads, af} do canal; ctx = produto + parâmetros gerais
 const mkLines=(p,mk)=>[['Cupom ('+mk.cupom+'%)',p*mk.cupom/100,mk.cupom===0],['Ads ('+mk.ads+'%)',p*mk.ads/100,mk.ads===0,'hl'],['Afiliados ('+mk.af+'%)',p*mk.af/100,mk.af===0]];
 // margem é sobre o preço líquido (preço − imposto): lucro = m × P × (1 − imposto), então entra como m × (1 − imposto) na soma de % do preço
-const extra=(ctx,mk)=>ctx.margem*(1-ctx.imposto/100)+ctx.imposto+mk.cupom+mk.ads+mk.af;
-function detML(p,ctx,mk,fg,com){ const cv=p*com/100, fr=custoFreteML(ctx.peso,p,fg); const m=mkLines(p,mk);
-  return {custos:[cv,fr,...m.map(x=>x[1])], linhas:[['Comissão ('+com+'%)',cv],['Custo de frete',fr],...m]}; }
+const extra=(ctx,mk)=>ctx.margem*(1-ctx.imposto/100)+ctx.imposto+mk.cupom+mk.ads+mk.af-(mk.rebate||0);
+function detML(p,ctx,mk,fg,com){ const cv=p*com/100, fr=custoFreteML(ctx.peso,p,fg); const m=mkLines(p,mk); const rb=p*(mk.rebate||0)/100;
+  return {custos:[cv,fr,...m.map(x=>x[1]),-rb], linhas:[['Comissão ('+com+'%)',cv],['Custo de frete',fr],...m,['Rebate ('+(mk.rebate||0)+'%)',-rb,rb===0,'pos']]}; }
 const PLATS=[
  {id:'ml_premium',name:'ML Premium',color:'var(--ml-prem)',mk:'ML',freteGratis:true,
   calc:(c,mk)=>{ if(!(c.peso>0)) return null; return precoML(c.custo,c.peso,extra(c,mk),c.comPrem,false); },
@@ -549,7 +550,7 @@ function persistParam(chave,g){ if(!ST.db){ ls.set('parametros_por_conta',parame
 async function persistMuitos(lista,fn){ for(const x of lista){ const ok=await fn(x); if(ok===false) return false; } return true; }
 function recalcContas(){ contas=[...new Set([...contasExtra,...produtos.map(p=>p.cliente||'Sem conta')])].filter(Boolean).sort((a,b)=>a.localeCompare(b)); }
 
-const MK_IDS=['comPrem','comClas','cupomML','adsML','afML','cupomShopee','adsShopee','afShopee','cupomTiktok','adsTiktok','afTiktok','cupomShein','adsShein','afShein'];
+const MK_IDS=['comPrem','comClas','rebateML','cupomML','adsML','afML','cupomShopee','adsShopee','afShopee','cupomTiktok','adsTiktok','afTiktok','cupomShein','adsShein','afShein'];
 const G_IDS=['gImposto','gMargem','gAntecipa','gComShein'];
 let produtos=ls.get('produtos_cadastrados',[]), historico=ls.get('simulacoes_salvas',[]), contasExtra=ls.get('contas',[]), contas=[], parametros=ls.get('parametros_por_conta',{}), contaSel=ls.get('conta_sel','');
 const DEF_PARAM={gImposto:'11.30',gMargem:'15',gAntecipa:'0',gDevolucao:false,gEventos:false,gComShein:'20'};
@@ -565,7 +566,7 @@ const kg=v=>v>=1?v.toLocaleString('pt-BR',{maximumFractionDigits:3})+' kg':Math.
 function globais(){ const g=paramDe(prodSel?prodSel.cliente:contaSel); const n=v=>parseFloat(v)||0; const alvo=modo==='margem'?$('margemAlvo').value:''; const min=n(g.gMargem); return {imposto:n(g.gImposto),margemMin:min,margem:alvo!==''?(parseFloat(alvo)||0):min,antecipa:n(g.gAntecipa),devolucao:!!g.gDevolucao,eventos:!!g.gEventos,comShein:n(g.gComShein)}; }
 function ctxLive(){ const g=globais(); const p=prodSel||{cmv:0,peso:0,c:0,l:0,a:0};
   return {...g, custo:p.cmv||0, peso:pesoFrete(p), comPrem:num('comPrem'), comClas:num('comClas')}; }
-function mkOf(plat){ const k=plat.mk; return {cupom:num('cupom'+k),ads:num('ads'+k),af:num('af'+k)}; }
+function mkOf(plat){ const k=plat.mk; const rb=$('rebate'+k); return {cupom:num('cupom'+k),ads:num('ads'+k),af:num('af'+k),rebate:rb?(parseFloat(rb.value)||0):0}; }
 function resultadoPlat(plat, ctx){
   if (!(ctx.custo>0)) return null;
   const mk=mkOf(plat);
@@ -618,7 +619,7 @@ function render(){
       <div class="lines">
         <div><span>Custo do produto</span><span class="v">${BRL(ctx.custo)}</span></div>
         <div><span>Imposto (${ctx.imposto}%)</span><span class="v neg">−${BRL(b.imposto)}</span></div>
-        ${b.linhas.filter(l=>!l[2]).map(l=>`<div><span>${l[0]}</span><span class="v neg ${l[3]||''}">−${BRL(l[1])}</span></div>`).join('')}
+        ${b.linhas.filter(l=>!l[2]).map(l=>l[3]==='pos'?`<div><span>${l[0]}</span><span class="v rebate">+${BRL(-l[1])}</span></div>`:`<div><span>${l[0]}</span><span class="v neg ${l[3]||''}">−${BRL(l[1])}</span></div>`).join('')}
         <div class="total ${b.lucro<0?'bad':segura?'ok':'warn'}"><span>Margem</span><span class="v">${BRL(b.lucro)} <span class="sep">·</span> ${b.margem.toFixed(1).replace('.',',')}%</span></div>
       </div></article>`;
   }).join('');
@@ -647,7 +648,7 @@ function salvar(){
   const era=editId; if(editId){ historico=historico.map(p=>p.id===editId?prod:p); } else { historico=[prod,...historico]; }
   editId=null; renderHist(); Promise.resolve(persistSim(prod)).then(ok=>{ if(ok!==false) notificar(era?'Simulação atualizada.':'Simulação salva no histórico.'); });
 }
-function limpar(){ $('margemAlvo').value=''; ['cupomML','adsML','afML','cupomShopee','adsShopee','afShopee','cupomTiktok','adsTiktok','afTiktok','cupomShein','adsShein','afShein'].forEach(id=>$(id).value=0); prodSel=null; syncPick(); precoManual={};freteGratis={};editId=null; $('erro').hidden=true; render(); }
+function limpar(){ $('margemAlvo').value=''; ['rebateML','cupomML','adsML','afML','cupomShopee','adsShopee','afShopee','cupomTiktok','adsTiktok','afTiktok','cupomShein','adsShein','afShein'].forEach(id=>$(id).value=0); prodSel=null; syncPick(); precoManual={};freteGratis={};editId=null; $('erro').hidden=true; render(); }
 function carregarHist(p){ if(p.mk) MK_IDS.forEach(id=>{ if(p.mk[id]!=null) $(id).value=p.mk[id]; });
   prodSel=produtos.find(x=>x.id==p.prodId)||null; syncPick();
   precoManual={...(p.precoManual||{})}; freteGratis={...(p.freteGratis||{})}; if(p.ativas?.length){ativas=[...p.ativas]; ls.set('plataformas_ativas',ativas);} editId=p.id; render(); showTab('calc'); window.scrollTo({top:0,behavior:'smooth'});
