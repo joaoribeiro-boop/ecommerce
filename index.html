@@ -655,7 +655,7 @@ function render(){
         <div class="kpis"><span class="kpi ${b.lucro>=0?'ok':'bad'}">Lucro ${BRL(b.lucro)}</span><span class="kpi ${segura?'neutral':'warn'}">Margem ${b.margem.toFixed(1)}%</span></div>
       </div>
       <div class="lines">
-        <div><span>Custo do produto</span><span class="v">${BRL(ctx.custo)}</span></div>
+        <div><span>Custo do produto</span><span class="v neg">−${BRL(ctx.custo)}</span></div>
         <div><span>Imposto (${ctx.imposto}%)</span><span class="v neg">−${BRL(b.imposto)}</span></div>
         ${b.linhas.filter(l=>!l[2]).map(l=>l[3]==='pos'?`<div><span>${l[0]}</span><span class="v rebate">+${BRL(-l[1])}</span></div>`:`<div><span>${l[0]}</span><span class="v neg ${l[3]||''}">−${BRL(l[1])}</span></div>`).join('')}
         <div class="total ${b.lucro<0?'bad':segura?'ok':'warn'}"><span>Margem</span><span class="v">${BRL(b.lucro)} <span class="sep">·</span> ${b.margem.toFixed(1).replace('.',',')}%</span></div>
