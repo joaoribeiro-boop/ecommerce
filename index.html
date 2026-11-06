@@ -75,6 +75,9 @@ label.f input[type=number],label.f input[type=text],select.sel{font:inherit;font
 .seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-fg)}
 .pickinput{font:inherit;font-size:14px;font-weight:600;color:var(--fg);background:var(--panel);border:1.5px solid var(--accent);border-radius:7px;padding:9px 10px;width:100%}
 .pickinput:focus{outline:2px solid var(--accent);outline-offset:1px}
+.picksel{display:flex;gap:8px;align-items:baseline;font-size:12px;color:var(--muted);margin-top:4px;min-width:0}
+.picksel b{font-family:var(--mono);font-size:12px;color:var(--fg);white-space:nowrap}
+.picksel span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .picklist{position:absolute;left:0;right:0;top:100%;margin-top:4px;z-index:20;background:var(--panel);border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow);max-height:280px;overflow:auto}
 .picklist button{display:flex;flex-direction:column;align-items:flex-start;gap:1px;width:100%;text-align:left;font:inherit;background:none;border:0;border-bottom:1px solid var(--line);padding:8px 10px;color:var(--fg);cursor:pointer}
 .picklist button:last-child{border-bottom:0}
@@ -231,9 +234,9 @@ details summary{cursor:pointer;font-weight:600;font-size:13px}
   <fieldset>
     <legend><span class="dot" style="background:var(--accent)"></span>Produto</legend>
     <div class="f picker">
-      <div class="pickhead"><span>Produto cadastrado *</span>
-        <div class="seg" role="group" aria-label="Buscar por"><button type="button" data-by="nome" aria-pressed="true">Nome</button><button type="button" data-by="sku" aria-pressed="false">SKU</button></div></div>
-      <input type="search" id="pickBusca" class="pickinput" autocomplete="off" placeholder="Digite o nome do produto" role="combobox" aria-expanded="false" aria-controls="pickLista">
+      <div class="pickhead"><span>Produto cadastrado * <small style="font-weight:500">· busque por nome ou SKU</small></span></div>
+      <input type="search" id="pickBusca" class="pickinput" autocomplete="off" placeholder="Digite o nome ou o SKU" role="combobox" aria-expanded="false" aria-controls="pickLista">
+      <div class="picksel" id="pickSel" hidden></div>
       <div class="picklist" id="pickLista" role="listbox" hidden></div>
     </div>
     <div class="summary" id="prodSummary"></div>
@@ -824,17 +827,18 @@ $('margemAlvo').addEventListener('input',render);
 document.querySelectorAll('.seg.modo button').forEach(b=>b.onclick=()=>{ modo=b.dataset.modo; ls.set('modo_preco',modo); render(); (modo==='margem'?$('margemAlvo'):document.querySelector('.ppbox:not([hidden]) input'))?.focus(); });
 document.querySelectorAll('[data-pp]').forEach(i=>i.addEventListener('input',()=>{ i.dataset.pp.split(' ').forEach(id=>{ if(i.value==='') delete precoManual[id]; else precoManual[id]=i.value; }); render(); }));
 let pickBy='nome', pickAtivo=-1;
-function syncPick(){ $('pickBusca').value=prodSel?(pickBy==='sku'&&prodSel.sku!=='-'?prodSel.sku:prodSel.nome):''; fecharPick(); }
+function syncPick(){ $('pickBusca').value=prodSel?prodSel.nome:''; const temSku=prodSel&&prodSel.sku&&prodSel.sku!=='-';
+  $('pickSel').hidden=!prodSel; $('pickSel').innerHTML=prodSel?`<b>SKU ${esc(temSku?prodSel.sku:'—')}</b><span>${esc(prodSel.cliente||'')}</span>`:''; fecharPick(); }
 function fecharPick(){ $('pickLista').hidden=true; $('pickBusca').setAttribute('aria-expanded','false'); pickAtivo=-1; }
 const destacar=(txt,q)=>{ const t=String(txt); if(!q) return esc(t); const i=t.toLowerCase().indexOf(q.toLowerCase()); return i<0?esc(t):esc(t.slice(0,i))+'<mark>'+esc(t.slice(i,i+q.length))+'</mark>'+esc(t.slice(i+q.length)); };
 function abrirPick(){
   const q=$('pickBusca').value.trim(); const ql=q.toLowerCase();
-  const campo=p=>pickBy==='sku'?(p.sku==='-'?'':p.sku):p.nome;
+  const sku=p=>p.sku==='-'?'':String(p.sku||''); const pos=p=>{ const a=p.nome.toLowerCase().indexOf(ql), b=sku(p).toLowerCase().indexOf(ql); return Math.min(a<0?999:a, b<0?999:b); };
   let lista=visiveis();
-  if(ql) lista=lista.filter(p=>campo(p).toLowerCase().includes(ql)).sort((a,b)=>campo(a).toLowerCase().indexOf(ql)-campo(b).toLowerCase().indexOf(ql));
+  if(ql) lista=lista.filter(p=>pos(p)<999).sort((a,b)=>pos(a)-pos(b));
   lista=lista.slice(0,50);
-  $('pickLista').innerHTML = lista.length ? lista.map((p,i)=>`<button type="button" role="option" data-pid="${p.id}" class="${i===pickAtivo?'act':''}"><span>${pickBy==='nome'?destacar(p.nome,q):esc(p.nome)}</span><small>SKU ${pickBy==='sku'?destacar(p.sku,q):esc(p.sku)} · ${esc(p.cliente||'—')} · CMV ${BRL(p.cmv)}</small></button>`).join('')
-    : `<div class="vazio">${visiveis().length?'Nenhum produto com esse '+(pickBy==='sku'?'SKU':'nome')+'.':'Nenhum produto cadastrado nesta conta. Cadastre na aba Produtos.'}</div>`;
+  $('pickLista').innerHTML = lista.length ? lista.map((p,i)=>`<button type="button" role="option" data-pid="${p.id}" class="${i===pickAtivo?'act':''}"><span>${destacar(p.nome,q)}</span><small>SKU ${destacar(sku(p)||'—',q)} · ${esc(p.cliente||'—')} · CMV ${BRL(p.cmv)}</small></button>`).join('')
+    : `<div class="vazio">${visiveis().length?'Nenhum produto com esse nome ou SKU.':'Nenhum produto cadastrado nesta conta. Cadastre na aba Produtos.'}</div>`;
   $('pickLista').hidden=false; $('pickBusca').setAttribute('aria-expanded','true');
   $('pickLista').querySelectorAll('[data-pid]').forEach(b=>b.onmousedown=e=>{ e.preventDefault(); selecionarProduto(b.dataset.pid); });
 }
@@ -845,7 +849,6 @@ $('pickBusca').addEventListener('keydown',e=>{ const itens=[...$('pickLista').qu
   if(e.key==='ArrowDown'||e.key==='ArrowUp'){ e.preventDefault(); if($('pickLista').hidden) abrirPick(); pickAtivo=Math.max(0,Math.min(itens.length-1,pickAtivo+(e.key==='ArrowDown'?1:-1))); itens.forEach((b,i)=>b.classList.toggle('act',i===pickAtivo)); itens[pickAtivo]?.scrollIntoView({block:'nearest'}); }
   else if(e.key==='Enter'){ e.preventDefault(); const b=itens[pickAtivo>=0?pickAtivo:0]; if(b){ selecionarProduto(b.dataset.pid); $('pickBusca').blur(); } }
   else if(e.key==='Escape'){ syncPick(); $('pickBusca').blur(); } });
-document.querySelectorAll('.pickhead .seg button').forEach(b=>b.onclick=()=>{ pickBy=b.dataset.by; document.querySelectorAll('.pickhead .seg button').forEach(x=>x.setAttribute('aria-pressed',x===b)); $('pickBusca').placeholder=pickBy==='sku'?'Digite o SKU':'Digite o nome do produto'; $('pickBusca').value=''; $('pickBusca').focus(); abrirPick(); });
 $('btnSalvar').onclick=salvar; $('btnNova').onclick=limpar;
 $('busca').oninput=renderHist; $('ordem').onchange=renderHist;
 $('btnExcel').onclick=()=>{ const lista=historico.filter(p=>!contaSel||p.cliente===contaSel); if(!lista.length) return notificar('Histórico vazio.');
