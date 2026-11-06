@@ -92,6 +92,11 @@ label.f input[type=number],label.f input[type=text],select.sel{font:inherit;font
 .picklist small{color:var(--muted);font-size:11px}
 .picklist mark{background:var(--warn-bg);color:inherit;border-radius:2px}
 .picklist .vazio{padding:10px;color:var(--muted);font-size:12px}
+div.f{display:flex;flex-direction:column;gap:4px;min-width:0}
+.lblu{display:flex;align-items:center;gap:4px;font-size:12px;font-weight:500;color:var(--muted)}
+select.unit{font:600 10px var(--body);color:var(--fg);background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:1px 2px;cursor:pointer}
+.f > input[type=number]{font:inherit;font-size:14px;color:var(--fg);background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:8px 10px;width:100%;font-variant-numeric:tabular-nums}
+.f > input[type=number]:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
 label.f.pp{color:var(--fg);font-weight:600}
 label.f.pp input{font-family:var(--mono);font-size:16px;border-color:var(--accent);background:var(--panel)}
 label.f input:focus,select.sel:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
@@ -261,12 +266,12 @@ details summary{cursor:pointer;font-weight:600;font-size:13px}
     <legend><span class="dot" style="background:var(--ml-clas)"></span>Mercado Livre</legend>
     <label class="f pp ppbox">Preço praticado (R$)<input type="number" step="0.01" min="0" data-pp="ml_premium ml_classico" placeholder="vazio = sugerido pela margem mínima"></label>
     <div class="row3">
-      <label class="f">Comissão Premium (%)<input type="number" step="0.1" id="comPrem" value="17"></label>
-      <label class="f">Comissão Clássico (%)<input type="number" step="0.1" id="comClas" value="12"></label>
-      <label class="f" title="Valor que o Mercado Livre devolve em campanhas com co-participação, em % do preço">Rebate (%)<input type="number" step="0.1" min="0" id="rebateML" value="0"></label>
+      <label class="f">Com. Premium<select class="sel" id="comPrem"><option value="14">14,00%</option><option value="15">15,00%</option><option value="16">16,00%</option><option value="16.5">16,50%</option><option value="17" selected>17,00%</option><option value="17.5">17,50%</option><option value="18">18,00%</option><option value="19">19,00%</option></select></label>
+      <label class="f">Com. Clássico<select class="sel" id="comClas"><option value="9">9,00%</option><option value="10">10,00%</option><option value="11">11,00%</option><option value="11.5">11,50%</option><option value="12" selected>12,00%</option><option value="12.5">12,50%</option><option value="13">13,00%</option><option value="14">14,00%</option><option value="16">16,00%</option></select></label>
+      <div class="f" title="Valor que o Mercado Livre devolve em campanhas com co-participação"><span class="lblu">Rebate <select class="unit" id="uRebateML" aria-label="Unidade"><option value="%">%</option><option value="R$">R$</option></select></span><input type="number" step="0.01" min="0" id="rebateML" value="0" aria-label="Rebate"></div>
     </div>
     <div class="row3">
-      <label class="f">Cupom (%)<input type="number" step="0.1" min="0" id="cupomML" value="0"></label>
+      <div class="f"><span class="lblu">Cupom <select class="unit" id="uCupomML" aria-label="Unidade"><option value="%">%</option><option value="R$">R$</option></select></span><input type="number" step="0.01" min="0" id="cupomML" value="0" aria-label="Cupom"></div>
       <label class="f">Ads (%)<input type="number" step="0.1" min="0" id="adsML" value="0"></label>
       <label class="f">Afiliados (%)<input type="number" step="0.1" min="0" id="afML" value="0"></label>
     </div>
@@ -277,7 +282,7 @@ details summary{cursor:pointer;font-weight:600;font-size:13px}
     <legend><span class="dot" style="background:var(--shopee)"></span>Shopee</legend>
     <label class="f pp ppbox">Preço praticado (R$)<input type="number" step="0.01" min="0" data-pp="shopee" placeholder="vazio = sugerido pela margem mínima"></label>
     <div class="row3">
-      <label class="f">Cupom (%)<input type="number" step="0.1" min="0" id="cupomShopee" value="0"></label>
+      <div class="f"><span class="lblu">Cupom <select class="unit" id="uCupomShopee" aria-label="Unidade"><option value="%">%</option><option value="R$">R$</option></select></span><input type="number" step="0.01" min="0" id="cupomShopee" value="0" aria-label="Cupom"></div>
       <label class="f">Ads (%)<input type="number" step="0.1" min="0" id="adsShopee" value="0"></label>
       <label class="f">Afiliados (%)<input type="number" step="0.1" min="0" id="afShopee" value="0"></label>
     </div>
@@ -288,7 +293,7 @@ details summary{cursor:pointer;font-weight:600;font-size:13px}
     <legend><span class="dot" style="background:var(--tiktok)"></span>TikTok Shop</legend>
     <label class="f pp ppbox">Preço praticado (R$)<input type="number" step="0.01" min="0" data-pp="tiktok" placeholder="vazio = sugerido pela margem mínima"></label>
     <div class="row3">
-      <label class="f">Cupom (%)<input type="number" step="0.1" min="0" id="cupomTiktok" value="0"></label>
+      <div class="f"><span class="lblu">Cupom <select class="unit" id="uCupomTiktok" aria-label="Unidade"><option value="%">%</option><option value="R$">R$</option></select></span><input type="number" step="0.01" min="0" id="cupomTiktok" value="0" aria-label="Cupom"></div>
       <label class="f">Ads (%)<input type="number" step="0.1" min="0" id="adsTiktok" value="0"></label>
       <label class="f">Afiliados (%)<input type="number" step="0.1" min="0" id="afTiktok" value="0"></label>
     </div>
@@ -299,7 +304,7 @@ details summary{cursor:pointer;font-weight:600;font-size:13px}
     <legend><span class="dot" style="background:var(--shein)"></span>Shein</legend>
     <label class="f pp ppbox">Preço praticado (R$)<input type="number" step="0.01" min="0" data-pp="shein" placeholder="vazio = sugerido pela margem mínima"></label>
     <div class="row3">
-      <label class="f">Cupom (%)<input type="number" step="0.1" min="0" id="cupomShein" value="0"></label>
+      <div class="f"><span class="lblu">Cupom <select class="unit" id="uCupomShein" aria-label="Unidade"><option value="%">%</option><option value="R$">R$</option></select></span><input type="number" step="0.01" min="0" id="cupomShein" value="0" aria-label="Cupom"></div>
       <label class="f">Ads (%)<input type="number" step="0.1" min="0" id="adsShein" value="0"></label>
       <label class="f">Afiliados (%)<input type="number" step="0.1" min="0" id="afShein" value="0"></label>
     </div>
@@ -522,11 +527,12 @@ function precoShein(custo, peso, pctExtra, comissao){
 
 // ===================== PLATAFORMAS =====================
 // mk = {cupom, ads, af} do canal; ctx = produto + parâmetros gerais
-const mkLines=(p,mk)=>[['Cupom ('+mk.cupom+'%)',p*mk.cupom/100,mk.cupom===0],['Ads ('+mk.ads+'%)',p*mk.ads/100,mk.ads===0,'hl'],['Afiliados ('+mk.af+'%)',p*mk.af/100,mk.af===0]];
+const fmtR=v=>'R$ '+Number(v).toFixed(2).replace('.',',');
+const mkLines=(p,mk)=>[mk.cupomR>0?['Cupom ('+fmtR(mk.cupomR)+')',mk.cupomR,false]:['Cupom ('+mk.cupom+'%)',p*mk.cupom/100,mk.cupom===0],['Ads ('+mk.ads+'%)',p*mk.ads/100,mk.ads===0,'hl'],['Afiliados ('+mk.af+'%)',p*mk.af/100,mk.af===0]];
 // margem é sobre o preço líquido (preço − imposto): lucro = m × P × (1 − imposto), então entra como m × (1 − imposto) na soma de % do preço
 const extra=(ctx,mk)=>ctx.margem*(1-ctx.imposto/100)+ctx.imposto+mk.cupom+mk.ads+mk.af-(mk.rebate||0);
-function detML(p,ctx,mk,fg,com){ const cv=p*com/100, fr=custoFreteML(ctx.peso,p,fg); const m=mkLines(p,mk); const rb=p*(mk.rebate||0)/100;
-  return {custos:[cv,fr,...m.map(x=>x[1]),-rb], linhas:[['Comissão ('+com+'%)',cv],['Custo de frete',fr],...m,['Rebate ('+(mk.rebate||0)+'%)',-rb,rb===0,'pos']]}; }
+function detML(p,ctx,mk,fg,com){ const cv=p*com/100, fr=custoFreteML(ctx.peso,p,fg); const m=mkLines(p,mk); const rb=mk.rebateR>0?mk.rebateR:p*(mk.rebate||0)/100;
+  return {custos:[cv,fr,...m.map(x=>x[1]),-rb], linhas:[['Comissão ('+com+'%)',cv],['Custo de frete',fr],...m,[mk.rebateR>0?'Rebate ('+fmtR(mk.rebateR)+')':'Rebate ('+(mk.rebate||0)+'%)',-rb,rb===0,'pos']]}; }
 const PLATS=[
  {id:'ml_premium',name:'ML Premium',color:'var(--ml-prem)',mk:'ML',freteGratis:true,
   calc:(c,mk)=>{ if(!(c.peso>0)) return null; return precoML(c.custo,c.peso,extra(c,mk),c.comPrem,false); },
@@ -586,12 +592,13 @@ function persistParam(chave,g){ if(!ST.db){ ls.set('parametros_por_conta',parame
 async function persistMuitos(lista,fn){ for(const x of lista){ const ok=await fn(x); if(ok===false) return false; } return true; }
 function recalcContas(){ contas=[...new Set([...contasExtra,...produtos.map(p=>p.cliente||'Sem conta')])].filter(Boolean).sort((a,b)=>a.localeCompare(b)); }
 
-const MK_IDS=['comPrem','comClas','rebateML','cupomML','adsML','afML','cupomShopee','adsShopee','afShopee','cupomTiktok','adsTiktok','afTiktok','cupomShein','adsShein','afShein'];
+const MK_IDS=['uRebateML','uCupomML','uCupomShopee','uCupomTiktok','uCupomShein','comPrem','comClas','rebateML','cupomML','adsML','afML','cupomShopee','adsShopee','afShopee','cupomTiktok','adsTiktok','afTiktok','cupomShein','adsShein','afShein'];
 const G_IDS=['gImposto','gMargem','gAntecipa','gComShein','gCupomML','gAdsML','gAfML','gCupomShopee','gAdsShopee','gAfShopee','gCupomTiktok','gAdsTiktok','gAfTiktok','gCupomShein','gAdsShein','gAfShein'];
 let produtos=ls.get('produtos_cadastrados',[]), historico=ls.get('simulacoes_salvas',[]), contasExtra=ls.get('contas',[]), contas=[], parametros=ls.get('parametros_por_conta',{}), contaSel=ls.get('conta_sel','');
 const DEF_PARAM={gImposto:'11.30',gMargem:'15',gAntecipa:'0',gDevolucao:false,gEventos:false,gComShein:'20',gCupomML:'0',gAdsML:'0',gAfML:'0',gCupomShopee:'0',gAdsShopee:'0',gAfShopee:'0',gCupomTiktok:'0',gAdsTiktok:'0',gAfTiktok:'0',gCupomShein:'0',gAdsShein:'0',gAfShein:'0'};
 const MK_CANAIS=["ML", "Shopee", "Tiktok", "Shein"];
-function aplicarMarketingPadrao(){ if(!prodSel) return; const g=paramDe(prodSel.cliente); MK_CANAIS.forEach(k=>{ $('cupom'+k).value=g['gCupom'+k]??0; $('ads'+k).value=g['gAds'+k]??0; $('af'+k).value=g['gAf'+k]??0; }); }
+function garantirSelects(){ [['comPrem','17'],['comClas','12'],['uRebateML','%'],['uCupomML','%'],['uCupomShopee','%'],['uCupomTiktok','%'],['uCupomShein','%']].forEach(([id,d])=>{ const el=$(id); if(el.selectedIndex<0||el.value==='') el.value=d; if(el.selectedIndex<0){ const o=document.createElement('option'); o.value=d; o.textContent=d; el.appendChild(o); el.value=d; } }); }
+function aplicarMarketingPadrao(){ if(!prodSel) return; const g=paramDe(prodSel.cliente); MK_CANAIS.forEach(k=>{ $('uCupom'+k).value='%'; $('cupom'+k).value=g['gCupom'+k]??0; $('ads'+k).value=g['gAds'+k]??0; $('af'+k).value=g['gAf'+k]??0; }); }
 function paramDe(conta){ return {...DEF_PARAM, ...(parametros[conta||'_default']||{})}; }
 function visiveis(){ return produtos.filter(p=>!contaSel||p.cliente===contaSel); }
 let modo=ls.get('modo_preco','preco'); if(modo!=='preco'&&modo!=='margem') modo='preco';
@@ -604,14 +611,18 @@ const kg=v=>v>=1?v.toLocaleString('pt-BR',{maximumFractionDigits:3})+' kg':Math.
 function globais(){ const g=paramDe(prodSel?prodSel.cliente:contaSel); const n=v=>parseFloat(v)||0; const alvo=modo==='margem'?$('margemAlvo').value:''; const min=n(g.gMargem); return {imposto:n(g.gImposto),margemMin:min,margem:alvo!==''?(parseFloat(alvo)||0):min,antecipa:n(g.gAntecipa),devolucao:!!g.gDevolucao,eventos:!!g.gEventos,comShein:n(g.gComShein)}; }
 function ctxLive(){ const g=globais(); const p=prodSel||{cmv:0,peso:0,c:0,l:0,a:0};
   return {...g, custo:p.cmv||0, peso:pesoFrete(p), comPrem:num('comPrem'), comClas:num('comClas')}; }
-function mkOf(plat){ const k=plat.mk; const rb=$('rebate'+k); return {cupom:num('cupom'+k),ads:num('ads'+k),af:num('af'+k),rebate:rb?(parseFloat(rb.value)||0):0}; }
+function mkOf(plat){ const k=plat.mk; const rb=$('rebate'+k); const uc=$('uCupom'+k).value, ur=$('uRebate'+k)?.value||'%';
+  const cup=num('cupom'+k), reb=rb?(parseFloat(rb.value)||0):0;
+  return {cupom:uc==='%'?cup:0, cupomR:uc==='R$'?cup:0, ads:num('ads'+k), af:num('af'+k), rebate:ur==='%'?reb:0, rebateR:ur==='R$'?reb:0}; }
+// valores em R$ (cupom, rebate) entram como custo fixo no cálculo do preço
+const ctxCalc=(ctx,mk)=>({...ctx, custo:ctx.custo+(mk.cupomR||0)-(mk.rebateR||0)});
 function resultadoPlat(plat, ctx){
   if (!(ctx.custo>0)) return null;
   const mk=mkOf(plat);
-  const base=plat.calc(ctx,mk); if(!base || base.erro) return base;
+  const cc=ctxCalc(ctx,mk); const base=plat.calc(cc,mk); if(!base || base.erro) return base;
   const allowToggle = plat.freteGratis && base.venda<79;
   const toggle = allowToggle && !!freteGratis[plat.id];
-  const res = toggle ? plat.calcFG(ctx,mk) : base;
+  const res = toggle ? plat.calcFG(cc,mk) : base;
   if (res.erro) return res;
   return {...res, allowToggle, toggle, mk};
 }
@@ -687,7 +698,7 @@ function salvar(){
   editId=null; renderHist(); Promise.resolve(persistSim(prod)).then(ok=>{ if(ok!==false) notificar(era?'Simulação atualizada.':'Simulação salva no histórico.'); });
 }
 function limpar(){ $('margemAlvo').value=''; ['rebateML','cupomML','adsML','afML','cupomShopee','adsShopee','afShopee','cupomTiktok','adsTiktok','afTiktok','cupomShein','adsShein','afShein'].forEach(id=>$(id).value=0); prodSel=null; syncPick(); precoManual={};freteGratis={};editId=null; $('erro').hidden=true; render(); }
-function carregarHist(p){ if(p.mk) MK_IDS.forEach(id=>{ if(p.mk[id]!=null) $(id).value=p.mk[id]; });
+function carregarHist(p){ if(p.mk) MK_IDS.forEach(id=>{ if(p.mk[id]!=null) $(id).value=p.mk[id]; }); garantirSelects();
   prodSel=produtos.find(x=>x.id==p.prodId)||null; syncPick();
   precoManual={...(p.precoManual||{})}; freteGratis={...(p.freteGratis||{})}; if(p.ativas?.length){ativas=[...p.ativas]; ls.set('plataformas_ativas',ativas);} editId=p.id; render(); showTab('calc'); window.scrollTo({top:0,behavior:'smooth'});
   notificar(prodSel?`Editando "${p.nome}". Salvar vai atualizar o registro.`:`O produto "${p.nome}" não está mais cadastrado na aba Custos.`); }
@@ -883,7 +894,7 @@ $('btnBkLoad').onclick=async()=>{ let d; try{ d=JSON.parse($('bk').value); }catc
 $('btnTheme').onclick=()=>{ const r=document.documentElement; const dark=r.dataset.theme==='dark'||(!r.dataset.theme&&matchMedia('(prefers-color-scheme: dark)').matches); r.dataset.theme=dark?'light':'dark'; ls.set('tema',r.dataset.theme); };
 
 (function init(){ const t=ls.get('tema',null); if(t) document.documentElement.dataset.theme=t;
-  const mk=ls.get('params_marketing',null); if(mk) MK_IDS.forEach(id=>{ if(mk[id]!=null&&mk[id]!=='') $(id).value=mk[id]; });
+  const mk=ls.get('params_marketing',null); if(mk) MK_IDS.forEach(id=>{ if(mk[id]!=null&&mk[id]!=='') $(id).value=mk[id]; }); garantirSelects();
   produtos.forEach(p=>{ if(!p.cliente) p.cliente='Sem conta'; }); recalcContas();
   if(contaSel&&!contas.includes(contaSel)) contaSel='';
   setSync('','Conectando ao banco compartilhado…');
