@@ -75,6 +75,8 @@ label.f input[type=number],label.f input[type=text],select.sel{font:inherit;font
 .seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-fg)}
 .pickinput{font:inherit;font-size:14px;font-weight:600;color:var(--fg);background:var(--panel);border:1.5px solid var(--accent);border-radius:7px;padding:9px 10px;width:100%}
 .pickinput:focus{outline:2px solid var(--accent);outline-offset:1px}
+.prodbar{grid-column:1/-1;padding:16px 18px;position:relative;z-index:5}
+.prodbar legend{margin-bottom:6px}
 .prodhead{display:flex;flex-direction:column;gap:4px;min-width:0}
 .prodhead .sku{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 12px;font-size:12px;color:var(--muted)}
 .prodhead .sku b{font-family:var(--mono);font-size:15px;font-weight:600;color:var(--brand);letter-spacing:.02em}
@@ -235,7 +237,7 @@ details summary{cursor:pointer;font-weight:600;font-size:13px}
 
 <!-- ===== CALCULADORA ===== -->
 <div class="grid" id="tab-calc" role="tabpanel">
-<section class="panel form" aria-label="Parâmetros de marketing">
+<section class="panel prodbar" aria-label="Produto">
   <fieldset>
     <legend><span class="dot" style="background:var(--accent)"></span>Produto</legend>
     <div class="f picker">
@@ -244,6 +246,10 @@ details summary{cursor:pointer;font-weight:600;font-size:13px}
       <div class="picksel" id="pickSel" hidden></div>
       <div class="picklist" id="pickLista" role="listbox" hidden></div>
     </div>
+  </fieldset>
+</section>
+<section class="panel form" aria-label="Parâmetros de marketing">
+  <fieldset>
     <div class="summary" id="prodSummary"></div>
     <div class="f"><span>Precificar por</span>
       <div class="seg modo" role="group" aria-label="Precificar por"><button type="button" data-modo="preco" aria-pressed="true">Preço praticado</button><button type="button" data-modo="margem" aria-pressed="false">Margem desejada</button></div></div>
@@ -308,7 +314,6 @@ details summary{cursor:pointer;font-weight:600;font-size:13px}
 </section>
 
 <section class="results">
-  <div class="prodhead" id="prodHead"></div>
   <div class="toolbar" id="plats"></div>
   <div class="cards" id="cards"></div>
 
@@ -613,7 +618,6 @@ function resultadoPlat(plat, ctx){
 
 // ===================== RENDER CALCULADORA =====================
 function render(){
-  $('prodHead').innerHTML = prodSel ? `<div class="sku"><b>SKU ${esc(prodSel.sku&&prodSel.sku!=='-'?prodSel.sku:'—')}</b><span>${esc(prodSel.cliente||'')}${prodSel.cat&&prodSel.cat!=='Geral'?' · '+esc(prodSel.cat):''}</span></div><h2>${esc(prodSel.nome)}</h2>` : `<h2 class="vazio">Escolha um produto pra ver o preço e a margem em cada canal.</h2>`;
   const ctx=ctxLive();
   $('prodSummary').innerHTML = prodSel
     ? `<span class="conta">${esc(prodSel.cliente||'—')}</span><span title="Custo do produto (aba Produtos)">CMV <strong>${BRL(prodSel.cmv)}</strong></span><span title="Peso p/ frete"><strong>${ctx.peso?kg(ctx.peso):'—'}</strong></span><span title="Imposto (aba Parâmetros)">Imp <strong>${ctx.imposto}%</strong></span><span title="Margem mínima (aba Parâmetros)">Mín <strong>${ctx.margemMin}%</strong></span>`
@@ -829,13 +833,13 @@ MK_IDS.forEach(id=>$(id).addEventListener('input',render));
 $('margemAlvo').addEventListener('input',render);
 document.querySelectorAll('.seg.modo button').forEach(b=>b.onclick=()=>{ modo=b.dataset.modo; ls.set('modo_preco',modo); render(); (modo==='margem'?$('margemAlvo'):document.querySelector('.ppbox:not([hidden]) input'))?.focus(); });
 document.querySelectorAll('[data-pp]').forEach(i=>i.addEventListener('input',()=>{ i.dataset.pp.split(' ').forEach(id=>{ if(i.value==='') delete precoManual[id]; else precoManual[id]=i.value; }); render(); }));
-let pickBy='nome', pickAtivo=-1;
+let pickBy='nome', pickAtivo=-1, pickDigitou=false;
 function syncPick(){ $('pickBusca').value=prodSel?prodSel.nome:''; const temSku=prodSel&&prodSel.sku&&prodSel.sku!=='-';
   $('pickSel').hidden=!prodSel; $('pickSel').innerHTML=prodSel?`<b>SKU ${esc(temSku?prodSel.sku:'—')}</b><span>${esc(prodSel.cliente||'')}</span>`:''; fecharPick(); }
 function fecharPick(){ $('pickLista').hidden=true; $('pickBusca').setAttribute('aria-expanded','false'); pickAtivo=-1; }
 const destacar=(txt,q)=>{ const t=String(txt); if(!q) return esc(t); const i=t.toLowerCase().indexOf(q.toLowerCase()); return i<0?esc(t):esc(t.slice(0,i))+'<mark>'+esc(t.slice(i,i+q.length))+'</mark>'+esc(t.slice(i+q.length)); };
 function abrirPick(){
-  const q=$('pickBusca').value.trim(); const ql=q.toLowerCase();
+  const q=pickDigitou?$('pickBusca').value.trim():''; const ql=q.toLowerCase();
   const sku=p=>p.sku==='-'?'':String(p.sku||''); const pos=p=>{ const a=p.nome.toLowerCase().indexOf(ql), b=sku(p).toLowerCase().indexOf(ql); return Math.min(a<0?999:a, b<0?999:b); };
   let lista=visiveis();
   if(ql) lista=lista.filter(p=>pos(p)<999).sort((a,b)=>pos(a)-pos(b));
@@ -845,8 +849,8 @@ function abrirPick(){
   $('pickLista').hidden=false; $('pickBusca').setAttribute('aria-expanded','true');
   $('pickLista').querySelectorAll('[data-pid]').forEach(b=>b.onmousedown=e=>{ e.preventDefault(); selecionarProduto(b.dataset.pid); });
 }
-$('pickBusca').addEventListener('input',()=>{ pickAtivo=-1; abrirPick(); });
-$('pickBusca').addEventListener('focus',()=>{ $('pickBusca').select(); abrirPick(); });
+$('pickBusca').addEventListener('input',()=>{ pickDigitou=true; pickAtivo=-1; abrirPick(); });
+$('pickBusca').addEventListener('focus',()=>{ pickDigitou=false; $('pickBusca').select(); abrirPick(); });
 $('pickBusca').addEventListener('blur',()=>setTimeout(syncPick,120));
 $('pickBusca').addEventListener('keydown',e=>{ const itens=[...$('pickLista').querySelectorAll('[data-pid]')];
   if(e.key==='ArrowDown'||e.key==='ArrowUp'){ e.preventDefault(); if($('pickLista').hidden) abrirPick(); pickAtivo=Math.max(0,Math.min(itens.length-1,pickAtivo+(e.key==='ArrowDown'?1:-1))); itens.forEach((b,i)=>b.classList.toggle('act',i===pickAtivo)); itens[pickAtivo]?.scrollIntoView({block:'nearest'}); }
