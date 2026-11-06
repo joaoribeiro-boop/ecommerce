@@ -75,6 +75,11 @@ label.f input[type=number],label.f input[type=text],select.sel{font:inherit;font
 .seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-fg)}
 .pickinput{font:inherit;font-size:14px;font-weight:600;color:var(--fg);background:var(--panel);border:1.5px solid var(--accent);border-radius:7px;padding:9px 10px;width:100%}
 .pickinput:focus{outline:2px solid var(--accent);outline-offset:1px}
+.prodhead{display:flex;flex-direction:column;gap:4px;min-width:0}
+.prodhead .sku{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 12px;font-size:12px;color:var(--muted)}
+.prodhead .sku b{font-family:var(--mono);font-size:15px;font-weight:600;color:var(--brand);letter-spacing:.02em}
+.prodhead h2{font-size:24px;font-weight:800;line-height:1.15;overflow-wrap:anywhere}
+.prodhead .vazio{color:var(--muted);font-size:15px}
 .picksel{display:flex;gap:8px;align-items:baseline;font-size:12px;color:var(--muted);margin-top:4px;min-width:0}
 .picksel b{font-family:var(--mono);font-size:12px;color:var(--fg);white-space:nowrap}
 .picksel span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -303,10 +308,7 @@ details summary{cursor:pointer;font-weight:600;font-size:13px}
 </section>
 
 <section class="results">
-  <div>
-    <div class="eyebrow">Resultados</div>
-    <h2 class="t">Compare o ganho real em cada plataforma</h2>
-  </div>
+  <div class="prodhead" id="prodHead"></div>
   <div class="toolbar" id="plats"></div>
   <div class="cards" id="cards"></div>
 
@@ -611,6 +613,7 @@ function resultadoPlat(plat, ctx){
 
 // ===================== RENDER CALCULADORA =====================
 function render(){
+  $('prodHead').innerHTML = prodSel ? `<div class="sku"><b>SKU ${esc(prodSel.sku&&prodSel.sku!=='-'?prodSel.sku:'—')}</b><span>${esc(prodSel.cliente||'')}${prodSel.cat&&prodSel.cat!=='Geral'?' · '+esc(prodSel.cat):''}</span></div><h2>${esc(prodSel.nome)}</h2>` : `<h2 class="vazio">Escolha um produto pra ver o preço e a margem em cada canal.</h2>`;
   const ctx=ctxLive();
   $('prodSummary').innerHTML = prodSel
     ? `<span class="conta">${esc(prodSel.cliente||'—')}</span><span title="Custo do produto (aba Produtos)">CMV <strong>${BRL(prodSel.cmv)}</strong></span><span title="Peso p/ frete"><strong>${ctx.peso?kg(ctx.peso):'—'}</strong></span><span title="Imposto (aba Parâmetros)">Imp <strong>${ctx.imposto}%</strong></span><span title="Margem mínima (aba Parâmetros)">Mín <strong>${ctx.margemMin}%</strong></span>`
