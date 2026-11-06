@@ -286,6 +286,7 @@ details summary{cursor:pointer;font-weight:600;font-size:13px}
       <label class="f">Ads (%)<input type="number" step="0.1" min="0" id="adsShopee" value="0"></label>
       <label class="f">Afiliados (%)<input type="number" step="0.1" min="0" id="afShopee" value="0"></label>
     </div>
+    <div class="row3"><div class="f"><span class="lblu">Rebate <select class="unit" id="uRebateShopee" aria-label="Unidade"><option value="%">%</option><option value="R$">R$</option></select></span><input type="number" step="0.01" min="0" id="rebateShopee" value="0" aria-label="Rebate"></div></div>
 
   </fieldset>
 
@@ -297,6 +298,7 @@ details summary{cursor:pointer;font-weight:600;font-size:13px}
       <label class="f">Ads (%)<input type="number" step="0.1" min="0" id="adsTiktok" value="0"></label>
       <label class="f">Afiliados (%)<input type="number" step="0.1" min="0" id="afTiktok" value="0"></label>
     </div>
+    <div class="row3"><div class="f"><span class="lblu">Rebate <select class="unit" id="uRebateTiktok" aria-label="Unidade"><option value="%">%</option><option value="R$">R$</option></select></span><input type="number" step="0.01" min="0" id="rebateTiktok" value="0" aria-label="Rebate"></div></div>
 
   </fieldset>
 
@@ -308,6 +310,7 @@ details summary{cursor:pointer;font-weight:600;font-size:13px}
       <label class="f">Ads (%)<input type="number" step="0.1" min="0" id="adsShein" value="0"></label>
       <label class="f">Afiliados (%)<input type="number" step="0.1" min="0" id="afShein" value="0"></label>
     </div>
+    <div class="row3"><div class="f"><span class="lblu">Rebate <select class="unit" id="uRebateShein" aria-label="Unidade"><option value="%">%</option><option value="R$">R$</option></select></span><input type="number" step="0.01" min="0" id="rebateShein" value="0" aria-label="Rebate"></div></div>
 
   </fieldset>
 
@@ -528,11 +531,12 @@ function precoShein(custo, peso, pctExtra, comissao){
 // ===================== PLATAFORMAS =====================
 // mk = {cupom, ads, af} do canal; ctx = produto + parâmetros gerais
 const fmtR=v=>'R$ '+Number(v).toFixed(2).replace('.',',');
-const mkLines=(p,mk)=>[mk.cupomR>0?['Cupom ('+fmtR(mk.cupomR)+')',mk.cupomR,false]:['Cupom ('+mk.cupom+'%)',p*mk.cupom/100,mk.cupom===0],['Ads ('+mk.ads+'%)',p*mk.ads/100,mk.ads===0,'hl'],['Afiliados ('+mk.af+'%)',p*mk.af/100,mk.af===0]];
+const rebLine=(p,mk)=>{ const rb=mk.rebateR>0?mk.rebateR:p*(mk.rebate||0)/100; return [mk.rebateR>0?'Rebate ('+fmtR(mk.rebateR)+')':'Rebate ('+(mk.rebate||0)+'%)',-rb,rb===0,'pos']; };
+const mkLines=(p,mk)=>[mk.cupomR>0?['Cupom ('+fmtR(mk.cupomR)+')',mk.cupomR,false]:['Cupom ('+mk.cupom+'%)',p*mk.cupom/100,mk.cupom===0],['Ads ('+mk.ads+'%)',p*mk.ads/100,mk.ads===0,'hl'],['Afiliados ('+mk.af+'%)',p*mk.af/100,mk.af===0],rebLine(p,mk)];
 // margem é sobre o preço líquido (preço − imposto): lucro = m × P × (1 − imposto), então entra como m × (1 − imposto) na soma de % do preço
 const extra=(ctx,mk)=>ctx.margem*(1-ctx.imposto/100)+ctx.imposto+mk.cupom+mk.ads+mk.af-(mk.rebate||0);
-function detML(p,ctx,mk,fg,com){ const cv=p*com/100, fr=custoFreteML(ctx.peso,p,fg); const m=mkLines(p,mk); const rb=mk.rebateR>0?mk.rebateR:p*(mk.rebate||0)/100;
-  return {custos:[cv,fr,...m.map(x=>x[1]),-rb], linhas:[['Comissão ('+com+'%)',cv],['Custo de frete',fr],...m,[mk.rebateR>0?'Rebate ('+fmtR(mk.rebateR)+')':'Rebate ('+(mk.rebate||0)+'%)',-rb,rb===0,'pos']]}; }
+function detML(p,ctx,mk,fg,com){ const cv=p*com/100, fr=custoFreteML(ctx.peso,p,fg); const m=mkLines(p,mk);
+  return {custos:[cv,fr,...m.map(x=>x[1])], linhas:[['Comissão ('+com+'%)',cv],['Custo de frete',fr],...m]}; }
 const PLATS=[
  {id:'ml_premium',name:'ML Premium',color:'var(--ml-prem)',mk:'ML',freteGratis:true,
   calc:(c,mk)=>{ if(!(c.peso>0)) return null; return precoML(c.custo,c.peso,extra(c,mk),c.comPrem,false); },
@@ -592,12 +596,12 @@ function persistParam(chave,g){ if(!ST.db){ ls.set('parametros_por_conta',parame
 async function persistMuitos(lista,fn){ for(const x of lista){ const ok=await fn(x); if(ok===false) return false; } return true; }
 function recalcContas(){ contas=[...new Set([...contasExtra,...produtos.map(p=>p.cliente||'Sem conta')])].filter(Boolean).sort((a,b)=>a.localeCompare(b)); }
 
-const MK_IDS=['uRebateML','uCupomML','uCupomShopee','uCupomTiktok','uCupomShein','comPrem','comClas','rebateML','cupomML','adsML','afML','cupomShopee','adsShopee','afShopee','cupomTiktok','adsTiktok','afTiktok','cupomShein','adsShein','afShein'];
+const MK_IDS=['uRebateShopee','uRebateTiktok','uRebateShein','rebateShopee','rebateTiktok','rebateShein','uRebateML','uCupomML','uCupomShopee','uCupomTiktok','uCupomShein','comPrem','comClas','rebateML','cupomML','adsML','afML','cupomShopee','adsShopee','afShopee','cupomTiktok','adsTiktok','afTiktok','cupomShein','adsShein','afShein'];
 const G_IDS=['gImposto','gMargem','gAntecipa','gComShein','gCupomML','gAdsML','gAfML','gCupomShopee','gAdsShopee','gAfShopee','gCupomTiktok','gAdsTiktok','gAfTiktok','gCupomShein','gAdsShein','gAfShein'];
 let produtos=ls.get('produtos_cadastrados',[]), historico=ls.get('simulacoes_salvas',[]), contasExtra=ls.get('contas',[]), contas=[], parametros=ls.get('parametros_por_conta',{}), contaSel=ls.get('conta_sel','');
 const DEF_PARAM={gImposto:'11.30',gMargem:'15',gAntecipa:'0',gDevolucao:false,gEventos:false,gComShein:'20',gCupomML:'0',gAdsML:'0',gAfML:'0',gCupomShopee:'0',gAdsShopee:'0',gAfShopee:'0',gCupomTiktok:'0',gAdsTiktok:'0',gAfTiktok:'0',gCupomShein:'0',gAdsShein:'0',gAfShein:'0'};
 const MK_CANAIS=["ML", "Shopee", "Tiktok", "Shein"];
-function garantirSelects(){ [['comPrem','17'],['comClas','12'],['uRebateML','%'],['uCupomML','%'],['uCupomShopee','%'],['uCupomTiktok','%'],['uCupomShein','%']].forEach(([id,d])=>{ const el=$(id); if(el.selectedIndex<0||el.value==='') el.value=d; if(el.selectedIndex<0){ const o=document.createElement('option'); o.value=d; o.textContent=d; el.appendChild(o); el.value=d; } }); }
+function garantirSelects(){ [['comPrem','17'],['comClas','12'],['uRebateML','%'],['uRebateShopee','%'],['uRebateTiktok','%'],['uRebateShein','%'],['uCupomML','%'],['uCupomShopee','%'],['uCupomTiktok','%'],['uCupomShein','%']].forEach(([id,d])=>{ const el=$(id); if(el.selectedIndex<0||el.value==='') el.value=d; if(el.selectedIndex<0){ const o=document.createElement('option'); o.value=d; o.textContent=d; el.appendChild(o); el.value=d; } }); }
 function aplicarMarketingPadrao(){ if(!prodSel) return; const g=paramDe(prodSel.cliente); MK_CANAIS.forEach(k=>{ $('uCupom'+k).value='%'; $('cupom'+k).value=g['gCupom'+k]??0; $('ads'+k).value=g['gAds'+k]??0; $('af'+k).value=g['gAf'+k]??0; }); }
 function paramDe(conta){ return {...DEF_PARAM, ...(parametros[conta||'_default']||{})}; }
 function visiveis(){ return produtos.filter(p=>!contaSel||p.cliente===contaSel); }
@@ -697,7 +701,7 @@ function salvar(){
   const era=editId; if(editId){ historico=historico.map(p=>p.id===editId?prod:p); } else { historico=[prod,...historico]; }
   editId=null; renderHist(); Promise.resolve(persistSim(prod)).then(ok=>{ if(ok!==false) notificar(era?'Simulação atualizada.':'Simulação salva no histórico.'); });
 }
-function limpar(){ $('margemAlvo').value=''; ['rebateML','cupomML','adsML','afML','cupomShopee','adsShopee','afShopee','cupomTiktok','adsTiktok','afTiktok','cupomShein','adsShein','afShein'].forEach(id=>$(id).value=0); prodSel=null; syncPick(); precoManual={};freteGratis={};editId=null; $('erro').hidden=true; render(); }
+function limpar(){ $('margemAlvo').value=''; ['rebateShopee','rebateTiktok','rebateShein','rebateML','cupomML','adsML','afML','cupomShopee','adsShopee','afShopee','cupomTiktok','adsTiktok','afTiktok','cupomShein','adsShein','afShein'].forEach(id=>$(id).value=0); prodSel=null; syncPick(); precoManual={};freteGratis={};editId=null; $('erro').hidden=true; render(); }
 function carregarHist(p){ if(p.mk) MK_IDS.forEach(id=>{ if(p.mk[id]!=null) $(id).value=p.mk[id]; }); garantirSelects();
   prodSel=produtos.find(x=>x.id==p.prodId)||null; syncPick();
   precoManual={...(p.precoManual||{})}; freteGratis={...(p.freteGratis||{})}; if(p.ativas?.length){ativas=[...p.ativas]; ls.set('plataformas_ativas',ativas);} editId=p.id; render(); showTab('calc'); window.scrollTo({top:0,behavior:'smooth'});
