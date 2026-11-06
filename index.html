@@ -169,6 +169,8 @@ details summary{cursor:pointer;font-weight:600;font-size:13px}
 .paramgrid{padding:18px;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;align-items:end}
 .prodform{padding:18px;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;align-items:end}
 .wide{grid-column:span 2}
+.mkpad td input{font:inherit;font-size:14px;color:var(--fg);background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:7px 9px;width:100%;min-width:70px;font-variant-numeric:tabular-nums}
+.mkpad td input:focus{outline:2px solid var(--accent);outline-offset:1px}
 .cards2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
 .cards2 .panel{padding:16px;min-width:0}
 .cards2 h3{font-size:15px;margin-bottom:6px}
@@ -341,6 +343,26 @@ details summary{cursor:pointer;font-weight:600;font-size:13px}
     <label class="chk"><input type="checkbox" id="gEventos"> Eventos oficiais Shopee (+2,5%)</label>
     <label class="f">Comissão Shein (%)<input type="number" step="0.1" min="0" id="gComShein" value="20"></label>
   </div>
+  <h2 class="t" style="margin-top:22px;font-size:17px">Marketing padrão por canal</h2>
+  <p class="lead">Preenche cupom, Ads e afiliados na calculadora quando você escolhe um produto desta conta. Dá pra ajustar na calculadora sem mudar o padrão.</p>
+  <div class="panel tbl small mkpad"><table><thead><tr><th>Canal</th><th>Cupom (%)</th><th>Ads (%)</th><th>Afiliados (%)</th></tr></thead><tbody>
+    <tr><td><span class="dot" style="background:var(--ml-clas);display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:6px"></span>Mercado Livre</td>
+      <td><input type="number" step="0.1" min="0" id="gCupomML" value="0" aria-label="Cupom Mercado Livre (%)"></td>
+      <td><input type="number" step="0.1" min="0" id="gAdsML" value="0" aria-label="Ads Mercado Livre (%)"></td>
+      <td><input type="number" step="0.1" min="0" id="gAfML" value="0" aria-label="Afiliados Mercado Livre (%)"></td></tr>
+    <tr><td><span class="dot" style="background:var(--shopee);display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:6px"></span>Shopee</td>
+      <td><input type="number" step="0.1" min="0" id="gCupomShopee" value="0" aria-label="Cupom Shopee (%)"></td>
+      <td><input type="number" step="0.1" min="0" id="gAdsShopee" value="0" aria-label="Ads Shopee (%)"></td>
+      <td><input type="number" step="0.1" min="0" id="gAfShopee" value="0" aria-label="Afiliados Shopee (%)"></td></tr>
+    <tr><td><span class="dot" style="background:var(--tiktok);display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:6px"></span>TikTok Shop</td>
+      <td><input type="number" step="0.1" min="0" id="gCupomTiktok" value="0" aria-label="Cupom TikTok Shop (%)"></td>
+      <td><input type="number" step="0.1" min="0" id="gAdsTiktok" value="0" aria-label="Ads TikTok Shop (%)"></td>
+      <td><input type="number" step="0.1" min="0" id="gAfTiktok" value="0" aria-label="Afiliados TikTok Shop (%)"></td></tr>
+    <tr><td><span class="dot" style="background:var(--shein);display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:6px"></span>Shein</td>
+      <td><input type="number" step="0.1" min="0" id="gCupomShein" value="0" aria-label="Cupom Shein (%)"></td>
+      <td><input type="number" step="0.1" min="0" id="gAdsShein" value="0" aria-label="Ads Shein (%)"></td>
+      <td><input type="number" step="0.1" min="0" id="gAfShein" value="0" aria-label="Afiliados Shein (%)"></td></tr>
+  </tbody></table></div>
 </section>
 
 <!-- ===== PRODUTOS ===== -->
@@ -551,9 +573,11 @@ async function persistMuitos(lista,fn){ for(const x of lista){ const ok=await fn
 function recalcContas(){ contas=[...new Set([...contasExtra,...produtos.map(p=>p.cliente||'Sem conta')])].filter(Boolean).sort((a,b)=>a.localeCompare(b)); }
 
 const MK_IDS=['comPrem','comClas','rebateML','cupomML','adsML','afML','cupomShopee','adsShopee','afShopee','cupomTiktok','adsTiktok','afTiktok','cupomShein','adsShein','afShein'];
-const G_IDS=['gImposto','gMargem','gAntecipa','gComShein'];
+const G_IDS=['gImposto','gMargem','gAntecipa','gComShein','gCupomML','gAdsML','gAfML','gCupomShopee','gAdsShopee','gAfShopee','gCupomTiktok','gAdsTiktok','gAfTiktok','gCupomShein','gAdsShein','gAfShein'];
 let produtos=ls.get('produtos_cadastrados',[]), historico=ls.get('simulacoes_salvas',[]), contasExtra=ls.get('contas',[]), contas=[], parametros=ls.get('parametros_por_conta',{}), contaSel=ls.get('conta_sel','');
-const DEF_PARAM={gImposto:'11.30',gMargem:'15',gAntecipa:'0',gDevolucao:false,gEventos:false,gComShein:'20'};
+const DEF_PARAM={gImposto:'11.30',gMargem:'15',gAntecipa:'0',gDevolucao:false,gEventos:false,gComShein:'20',gCupomML:'0',gAdsML:'0',gAfML:'0',gCupomShopee:'0',gAdsShopee:'0',gAfShopee:'0',gCupomTiktok:'0',gAdsTiktok:'0',gAfTiktok:'0',gCupomShein:'0',gAdsShein:'0',gAfShein:'0'};
+const MK_CANAIS=["ML", "Shopee", "Tiktok", "Shein"];
+function aplicarMarketingPadrao(){ if(!prodSel) return; const g=paramDe(prodSel.cliente); MK_CANAIS.forEach(k=>{ $('cupom'+k).value=g['gCupom'+k]??0; $('ads'+k).value=g['gAds'+k]??0; $('af'+k).value=g['gAf'+k]??0; }); }
 function paramDe(conta){ return {...DEF_PARAM, ...(parametros[conta||'_default']||{})}; }
 function visiveis(){ return produtos.filter(p=>!contaSel||p.cliente===contaSel); }
 let modo=ls.get('modo_preco','preco'); if(modo!=='preco'&&modo!=='margem') modo='preco';
@@ -630,7 +654,7 @@ function render(){
   const mk={}; MK_IDS.forEach(id=>mk[id]=$(id).value); ls.set('params_marketing',mk);
 }
 function notificar(t){ const m=$('msg'); m.textContent=t; m.hidden=false; clearTimeout(notificar.t); notificar.t=setTimeout(()=>m.hidden=true,5000); }
-function selecionarProduto(id){ prodSel=produtos.find(p=>p.id==id)||null; syncPick(); precoManual={}; freteGratis={}; editId=null; render(); }
+function selecionarProduto(id){ prodSel=produtos.find(p=>p.id==id)||null; syncPick(); precoManual={}; freteGratis={}; editId=null; aplicarMarketingPadrao(); render(); }
 
 // ===================== HISTÓRICO =====================
 function salvar(){
@@ -683,7 +707,7 @@ document.querySelectorAll('nav.tabs button').forEach(b=>b.onclick=()=>showTab(b.
 function showTab(t){ document.querySelectorAll('nav.tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===t)); ['calc','custos','param','tabelas','acessos'].forEach(x=>$('tab-'+x).hidden=x!==t); }
 
 // ===================== CUSTOS: parâmetros gerais + produtos =====================
-function salvarGlobais(){ const g={}; G_IDS.forEach(id=>g[id]=$(id).value); g.gDevolucao=$('gDevolucao').checked; g.gEventos=$('gEventos').checked; parametros[contaSel||'_default']=g; persistParam(contaSel||'_default',g); render(); atualizarBackup(); }
+function salvarGlobais(){ const g={}; G_IDS.forEach(id=>g[id]=$(id).value); g.gDevolucao=$('gDevolucao').checked; g.gEventos=$('gEventos').checked; parametros[contaSel||'_default']=g; persistParam(contaSel||'_default',g); if(prodSel&&(prodSel.cliente||'')===(contaSel||'')) aplicarMarketingPadrao(); render(); atualizarBackup(); }
 function aplicarGlobais(){ const g=paramDe(contaSel); G_IDS.forEach(id=>$(id).value=g[id]); $('gDevolucao').checked=!!g.gDevolucao; $('gEventos').checked=!!g.gEventos; $('paramTitulo').textContent=contaSel?`Parâmetros — ${contaSel}`:'Parâmetros padrão (sem conta selecionada)'; }
 G_IDS.forEach(id=>$(id).addEventListener('input',salvarGlobais)); $('gDevolucao').addEventListener('change',salvarGlobais); $('gEventos').addEventListener('change',salvarGlobais);
 
@@ -908,7 +932,7 @@ function ligarBanco(db){
   produtos=[]; historico=[]; contasExtra=[]; parametros={}; aposDados();
   const pend=new Set(['produtos','simulacoes','contas','parametros']);
   const timer=setTimeout(()=>{ if(pend.size) setSync('warn','O banco ainda não respondeu. Os dados podem estar desatualizados.'); },10000);
-  const pronto=(nome,snap)=>{ if(!snap.metadata.fromCache && pend.delete(nome) && !pend.size){ clearTimeout(timer); ST.carregado=true; aposDados();
+  const pronto=(nome,snap)=>{ if(!snap.metadata.fromCache && pend.delete(nome) && !pend.size){ clearTimeout(timer); ST.carregado=true; aposDados(); aplicarMarketingPadrao(); render();
       setSync('ok','Dados compartilhados · sincronizado'); oferecerMigracao(); } };
   const falhou=e=>{ clearTimeout(timer); setSync('bad','Não consegui ler o banco. Recarregue a página.'); };
   db.collection('produtos').onSnapshot(snap=>{ produtos=snap.docs.map(d=>({...d.data()})); produtos.forEach(p=>{ if(!p.cliente) p.cliente='Sem conta'; }); aposDados(); pronto('produtos',snap); },falhou);
