@@ -608,7 +608,7 @@ let produtos=ls.get('produtos_cadastrados',[]), historico=ls.get('simulacoes_sal
 const DEF_PARAM={gImposto:'11.30',gMargem:'15',gAntecipa:'0',gDevolucao:false,gEventos:false,gComShein:'20',gCupomML:'0',gAdsML:'0',gAfML:'0',gCupomShopee:'0',gAdsShopee:'0',gAfShopee:'0',gCupomTiktok:'0',gAdsTiktok:'0',gAfTiktok:'0',gCupomShein:'0',gAdsShein:'0',gAfShein:'0'};
 const MK_CANAIS=["ML", "Shopee", "Tiktok", "Shein"];
 function garantirSelects(){ [['comPrem','17'],['comClas','12'],['uRebateML','%'],['uRebateShopee','%'],['uRebateTiktok','%'],['uRebateShein','%'],['uCupomML','%'],['uCupomShopee','%'],['uCupomTiktok','%'],['uCupomShein','%']].forEach(([id,d])=>{ const el=$(id); if(el.selectedIndex<0||el.value==='') el.value=d; if(el.selectedIndex<0){ const o=document.createElement('option'); o.value=d; o.textContent=d; el.appendChild(o); el.value=d; } }); }
-function aplicarMarketingPadrao(){ if(!prodSel) return; const g=paramDe(prodSel.cliente); MK_CANAIS.forEach(k=>{ $('uCupom'+k).value='%'; $('cupom'+k).value=g['gCupom'+k]??0; $('ads'+k).value=g['gAds'+k]??0; $('af'+k).value=g['gAf'+k]??0; }); }
+function aplicarMarketingPadrao(){ if(!prodSel) return; const g=paramDe(prodSel.cliente); MK_CANAIS.forEach(k=>{ if($('uCupom'+k).value==='%') $('cupom'+k).value=g['gCupom'+k]??0; $('ads'+k).value=g['gAds'+k]??0; $('af'+k).value=g['gAf'+k]??0; }); }
 function paramDe(conta){ return {...DEF_PARAM, ...(parametros[conta||'_default']||{})}; }
 function visiveis(){ return produtos.filter(p=>!contaSel||p.cliente===contaSel); }
 let modo=ls.get('modo_preco','preco'); if(modo!=='preco'&&modo!=='margem') modo='preco';
