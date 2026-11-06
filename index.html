@@ -31,6 +31,10 @@
 .login h1{font-size:22px;font-weight:800;color:var(--brand)}
 .login .actions .btn{flex:1;justify-content:center}
 .userbox{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
+details.ckl summary{cursor:pointer;font-size:12px;font-weight:600;color:var(--accent);white-space:nowrap}
+details.ckl summary.nenhuma{color:var(--warn)}
+.ckbox{display:flex;flex-direction:column;gap:6px;padding:8px 0 4px;min-width:200px}
+.ckbox .chk{font-size:12px;white-space:normal}
 .syncbar{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--muted);margin:-6px 0 8px}
 .dotsync{width:6px;height:6px;border-radius:50%;background:var(--muted)}
 .dotsync.ok{background:var(--ok)} .dotsync.warn{background:var(--warn)} .dotsync.bad{background:var(--bad)}
@@ -427,14 +431,14 @@ details summary{cursor:pointer;font-weight:600;font-size:13px}
 <section id="tab-acessos" role="tabpanel" hidden>
   <div class="eyebrow">Administração</div>
   <h2 class="t">Quem pode usar a calculadora</h2>
-  <p class="lead">Só e-mails desta lista conseguem entrar. Depois de liberar, avise a pessoa pra clicar em "Primeiro acesso" e criar a senha.</p>
+  <p class="lead">Só e-mails desta lista conseguem entrar. Depois de liberar, marque quais contas a pessoa pode ver e avise pra clicar em "Primeiro acesso". Administradores veem todas as contas e são os únicos que veem esta aba.</p>
   <form class="panel paramgrid" id="formMembro">
     <label class="f wide">E-mail<input type="text" id="mEmail" placeholder="pessoa@empresa.com" autocomplete="off"></label>
     <label class="chk"><input type="checkbox" id="mAdmin"> Administrador (pode liberar acessos)</label>
     <div class="actions"><button class="btn primary" type="submit">Liberar acesso</button></div>
   </form>
   <div class="panel hist" style="margin-top:14px">
-    <div class="tbl small"><table><thead><tr><th>E-mail</th><th>Perfil</th><th>Liberado em</th><th></th></tr></thead><tbody id="membrosBody"></tbody></table></div>
+    <div class="tbl small"><table><thead><tr><th>E-mail</th><th>Perfil</th><th>Contas que vê</th><th>Liberado em</th><th></th></tr></thead><tbody id="membrosBody"></tbody></table></div>
   </div>
 </section>
 
@@ -972,19 +976,32 @@ function ligarBanco(db){
 
 // ---------- acessos (admin) ----------
 let membros=[];
-async function carregarMembros(){ const {data,error}=await SB.from('membros').select('email,admin,criado_em').order('email'); if(!error){ membros=data; renderMembros(); } }
+async function carregarMembros(){ const {data,error}=await SB.from('membros').select('email,admin,criado_em,todas_contas,contas').order('email'); if(!error){ membros=data; renderMembros(); } }
 function assinarMembros(){ carregarMembros(); SB.channel('rt-membros').on('postgres_changes',{event:'*',schema:'public',table:'membros'},carregarMembros).subscribe(); }
+function contasCell(m){
+  if(m.admin) return '<span class="note">Todas (administrador)</span>';
+  const sel=new Set(m.contas||[]); const resumo=m.todas_contas?'Todas as contas':(sel.size?`${sel.size} conta(s)`:'Nenhuma conta');
+  return `<details class="ckl"><summary class="${!m.todas_contas&&!sel.size?'nenhuma':''}">${resumo}</summary><div class="ckbox">
+    <label class="chk"><input type="checkbox" data-mtodas="${esc(m.email)}" ${m.todas_contas?'checked':''}> <b>Todas as contas</b> (inclui as novas)</label>
+    ${contas.length?contas.map(c=>`<label class="chk"><input type="checkbox" data-mconta="${esc(m.email)}" value="${esc(c)}" ${sel.has(c)||m.todas_contas?'checked':''} ${m.todas_contas?'disabled':''}> ${esc(c)}</label>`).join(''):'<span class="note">Nenhuma conta cadastrada ainda.</span>'}
+  </div></details>`; }
+const abertos=new Set();
 function renderMembros(){ const eu=$('userEmail').textContent.toLowerCase();
-  $('membrosBody').innerHTML=membros.map(m=>`<tr><td>${esc(m.email)}${m.email===eu?' <span class="chip">você</span>':''}</td><td>${m.admin?'<span class="chip ok">Administrador</span>':'<span class="chip">Usuário</span>'}</td><td>${new Date(m.criado_em).toLocaleDateString('pt-BR')}</td><td>${m.email===eu?'':`<button class="btn sm" data-madm="${esc(m.email)}">${m.admin?'Tirar admin':'Tornar admin'}</button> <button class="btn sm danger" data-mdel="${esc(m.email)}">Remover acesso</button>`}</td></tr>`).join('');
+  $('membrosBody').querySelectorAll('details.ckl[open]').forEach(d=>abertos.add(d.dataset.email));
+  $('membrosBody').innerHTML=membros.map(m=>`<tr><td>${esc(m.email)}${m.email===eu?' <span class="chip">você</span>':''}</td><td>${m.admin?'<span class="chip ok">Administrador</span>':'<span class="chip">Usuário</span>'}</td><td>${contasCell(m)}</td><td>${new Date(m.criado_em).toLocaleDateString('pt-BR')}</td><td>${m.email===eu?'':`<button class="btn sm" data-madm="${esc(m.email)}">${m.admin?'Tirar admin':'Tornar admin'}</button> <button class="btn sm danger" data-mdel="${esc(m.email)}">Remover acesso</button>`}</td></tr>`).join('');
+  $('membrosBody').querySelectorAll('details.ckl').forEach((d,i)=>{ const em=d.querySelector('input')?.dataset.mtodas; d.dataset.email=em||''; if(abertos.has(em)) d.open=true; d.ontoggle=()=>{ if(d.open) abertos.add(em); else abertos.delete(em); }; });
   $('membrosBody').querySelectorAll('[data-mdel]').forEach(b=>b.onclick=async()=>{ if(!b.dataset.confirm){ b.dataset.confirm='1'; b.textContent='Confirmar remoção'; return; }
     const {error}=await SB.from('membros').delete().eq('email',b.dataset.mdel); if(error) notificar('Não consegui remover: '+error.message); else { notificar('Acesso removido.'); carregarMembros(); } });
   $('membrosBody').querySelectorAll('[data-madm]').forEach(b=>b.onclick=async()=>{ const m=membros.find(x=>x.email===b.dataset.madm);
-    const {error}=await SB.from('membros').update({admin:!m.admin}).eq('email',m.email); if(error) notificar('Não consegui alterar: '+error.message); else carregarMembros(); }); }
+    const {error}=await SB.from('membros').update({admin:!m.admin}).eq('email',m.email); if(error) notificar('Não consegui alterar: '+error.message); else carregarMembros(); });
+  $('membrosBody').querySelectorAll('[data-mtodas]').forEach(i=>i.onchange=async()=>{ const {error}=await SB.from('membros').update({todas_contas:i.checked}).eq('email',i.dataset.mtodas); if(error) notificar('Não consegui salvar: '+error.message); else { notificar('Contas atualizadas.'); carregarMembros(); } });
+  $('membrosBody').querySelectorAll('[data-mconta]').forEach(i=>i.onchange=async()=>{ const em=i.dataset.mconta; const marcadas=[...$('membrosBody').querySelectorAll(`[data-mconta="${CSS.escape(em)}"]:checked`)].map(x=>x.value);
+    const {error}=await SB.from('membros').update({contas:marcadas}).eq('email',em); if(error) notificar('Não consegui salvar: '+error.message); else { notificar('Contas atualizadas.'); carregarMembros(); } }); }
 $('formMembro').onsubmit=async e=>{ e.preventDefault(); const email=$('mEmail').value.trim().toLowerCase();
   if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return notificar('Digite um e-mail válido.');
   const {error}=await SB.from('membros').insert({email,admin:$('mAdmin').checked});
   if(error) return notificar(error.code==='23505'?'Esse e-mail já está liberado.':'Não consegui liberar: '+error.message);
-  $('mEmail').value=''; $('mAdmin').checked=false; notificar(`Acesso liberado pra ${email}. Avise a pessoa pra clicar em "Primeiro acesso".`); carregarMembros(); };
+  $('mEmail').value=''; $('mAdmin').checked=false; notificar(`Acesso liberado pra ${email}. Agora marque as contas que ela pode ver e avise pra clicar em "Primeiro acesso".`); abertos.add(email); carregarMembros(); };
 
 function oferecerMigracao(){ if(!ST.podeEscrever||ls.get('migrado_banco',false)) return; const {lp,lh,tem}=localTemDados(); if(!tem) return;
   const idsP=new Set(produtos.map(p=>String(p.id))), idsH=new Set(historico.map(p=>String(p.id)));
