@@ -31,8 +31,8 @@
 .login h1{font-size:22px;font-weight:800;color:var(--brand)}
 .login .actions .btn{flex:1;justify-content:center}
 .userbox{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
-.syncbar{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);margin:-4px 0 10px}
-.dotsync{width:8px;height:8px;border-radius:50%;background:var(--muted)}
+.syncbar{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--muted);margin:-6px 0 8px}
+.dotsync{width:6px;height:6px;border-radius:50%;background:var(--muted)}
 .dotsync.ok{background:var(--ok)} .dotsync.warn{background:var(--warn)} .dotsync.bad{background:var(--bad)}
 .migra{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:space-between;padding:10px 14px;margin-bottom:12px;background:var(--warn-bg);color:var(--warn);font-size:13px;font-weight:500;border-color:transparent}
 [hidden]{display:none!important}
@@ -43,6 +43,10 @@ h1,h2,h3{font-family:var(--display);margin:0;text-wrap:balance;line-height:1.15}
 header.top{padding:14px 0 10px;display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;justify-content:space-between}
 header.top h1{font-size:22px;font-weight:800;letter-spacing:-.02em;color:var(--brand)}
 header.top p{margin:2px 0 0;color:var(--muted);font-size:12px}
+header.top .actions{align-items:center!important;gap:6px}
+.hconta{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.hconta select.sel{font-size:12px;font-weight:600;padding:5px 8px;width:auto;min-width:150px;max-width:220px;text-transform:none;letter-spacing:0}
+header.top .btn.sm{padding:5px 9px;font-size:11px}
 .eyebrow{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 h2.t{font-size:20px;font-weight:700}
 .lead{color:var(--muted);margin:4px 0 14px;max-width:70ch}
@@ -200,8 +204,8 @@ details summary{cursor:pointer;font-weight:600;font-size:13px}
     <p>Preço e margem real no ML, Shopee, TikTok Shop e Shein.</p>
   </div>
   <div class="actions" style="align-items:flex-end">
-    <label class="f" style="min-width:220px">Conta / cliente<select class="sel" id="contaSel"><option value="">Todas as contas</option></select></label>
-    <button class="btn" id="btnNovaConta" type="button">+ Nova conta</button>
+    <label class="hconta"><span>Conta</span><select class="sel" id="contaSel"><option value="">Todas as contas</option></select></label>
+    <button class="btn sm" id="btnNovaConta" type="button">+ Nova conta</button>
     <span class="userbox"><span id="userEmail"></span><button class="btn sm" id="btnSair" type="button">Sair</button></span>
     <button class="btn sm" id="btnTheme" type="button">🌗 Tema</button>
   </div>
