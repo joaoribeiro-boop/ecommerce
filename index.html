@@ -1100,7 +1100,7 @@ $('btnTheme').onclick=()=>{ const r=document.documentElement; const dark=r.datas
   if(contaSel&&!contas.includes(contaSel)) contaSel='';
   setSync('','Conectando ao banco compartilhado…');
   renderContas(); aplicarGlobais(); renderProd(); prodSel=visiveis()[0]||null; syncPick(); $('pCliente').value=contaSel; updCub(); render(); renderHist();
-  conectarBanco(); })();
+  })();
 
 // ===================== BANCO COMPARTILHADO =====================
 function aposDados(){ recalcContas(); if(contaSel&&!contas.includes(contaSel)&&(ST.modo!=='db'||ST.carregado)){ contaSel=''; ls.set('conta_sel',''); }
@@ -1196,6 +1196,7 @@ $('formMembro').onsubmit=async e=>{ e.preventDefault(); const email=$('mEmail').
   if(error) return notificar(error.code==='23505'?'Esse e-mail já está liberado.':'Não consegui liberar: '+error.message);
   $('mEmail').value=''; $('mAdmin').checked=false; notificar(`Acesso liberado pra ${email}. Agora marque as contas que ela pode ver e avise pra clicar em "Primeiro acesso".`); abertos.add(email); carregarMembros(); };
 
+conectarBanco(); // sessão salva: entra direto se já fez login antes
 function oferecerMigracao(){ if(!ST.podeEscrever||ls.get('migrado_banco',false)) return; const {lp,lh,tem}=localTemDados(); if(!tem) return;
   const idsP=new Set(produtos.map(p=>String(p.id))), idsH=new Set(historico.map(p=>String(p.id)));
   const fp=lp.filter(p=>!idsP.has(String(p.id))).length, fh=lh.filter(p=>!idsH.has(String(p.id))).length; if(!fp&&!fh) return;
