@@ -199,6 +199,18 @@ details summary{cursor:pointer;font-weight:600;font-size:13px}
 .massactl{grid-template-columns:minmax(160px,200px) minmax(0,1fr) minmax(160px,220px) auto}
 @media (max-width:900px){.massactl{grid-template-columns:minmax(0,1fr)}}
 .mcanais{display:flex;flex-wrap:wrap;gap:6px;padding-top:2px}
+.mxparams{padding:12px 16px;margin-top:12px;display:flex;flex-direction:column;gap:10px}
+.mxparams summary{cursor:pointer;font-family:var(--display);font-weight:700;font-size:14px}
+.mxparams summary .note{font-family:var(--body);font-weight:500;margin-left:6px}
+.mxtop{display:grid;grid-template-columns:170px 170px 1fr;gap:10px;align-items:end}
+.mxtop .actions{justify-content:flex-end}
+@media (max-width:600px){.mxtop{grid-template-columns:1fr 1fr}.mxtop .actions{grid-column:1/-1;justify-content:flex-start}}
+.mxtbl table{min-width:560px}
+.mxin{display:flex;gap:4px;align-items:center}
+.mxin select.unit{padding:6px 2px;font-size:11px}
+.mxtbl .canal{display:inline-flex;align-items:center;gap:6px;font-weight:600}
+.mxtbl .canal i{width:8px;height:8px;border-radius:50%;background:var(--c)}
+.mxtbl input::placeholder{color:var(--muted);opacity:.7}
 .mkpis{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
 .mkpis span{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:12px;color:var(--muted)}
 .mkpis b{color:var(--fg);font-variant-numeric:tabular-nums}
@@ -413,13 +425,44 @@ details summary{cursor:pointer;font-weight:600;font-size:13px}
 <section id="tab-massa" role="tabpanel" hidden>
   <div class="eyebrow">Precificação em massa</div>
   <h2 class="t">Preço de todos os SKUs pela margem</h2>
-  <p class="lead">Calcula o preço de venda de cada produto da conta selecionada em cada canal, pra fechar na margem desejada. Cupom, Ads e afiliados vêm dos padrões da aba Parâmetros de cada conta; comissões do ML vêm da calculadora. A margem é sobre o preço líquido (preço − imposto).</p>
+  <p class="lead">Calcula o preço de venda de cada produto da conta selecionada em cada canal, pra fechar na margem desejada. Cupom, Ads, afiliados, rebate e comissões do ML podem ser ajustados no painel abaixo; em branco, valem os padrões da aba Parâmetros de cada conta. A margem é sobre o preço líquido (preço − imposto).</p>
   <div class="panel paramgrid massactl">
     <label class="f pp">Margem desejada (%)<input type="number" step="0.1" id="mMargem" placeholder="vazio = mínima de cada conta"></label>
     <div class="f"><span>Canais</span><div class="mcanais" id="mCanais"></div></div>
     <label class="f">Buscar SKU ou nome<input type="text" id="mBusca" placeholder="filtrar a tabela"></label>
     <div class="actions"><button class="btn primary" type="button" id="btnMassaXlsx">Exportar Excel</button><button class="btn" type="button" id="btnMassaPdf">Exportar PDF</button></div>
   </div>
+  <details class="panel mxparams" id="mxBox" open>
+    <summary>Parâmetros da precificação <span class="note" id="mxNota"></span></summary>
+    <div class="mxtop">
+      <label class="f">Com. Premium<select class="sel" id="mxComPrem"></select></label>
+      <label class="f">Com. Clássico<select class="sel" id="mxComClas"></select></label>
+      <div class="actions" style="align-self:end"><button class="btn sm" type="button" id="btnMxLimpar">Voltar aos padrões das contas</button></div>
+    </div>
+    <div class="tbl small mkpad mxtbl"><table><thead><tr><th>Canal</th><th>Cupom</th><th>Ads (%)</th><th>Afiliados (%)</th><th>Rebate</th></tr></thead><tbody>
+      <tr data-mxk="ML"><td><span class="canal" style="--c:var(--ml-clas)"><i></i>Mercado Livre</span></td>
+        <td><div class="mxin"><select class="unit" id="mxu_cupom_ML" aria-label="Unidade"><option value="%">%</option><option value="R$">R$</option></select><input type="number" step="0.01" min="0" id="mx_cupom_ML" aria-label="Cupom Mercado Livre"></div></td>
+        <td><input type="number" step="0.1" min="0" id="mx_ads_ML" aria-label="Ads Mercado Livre (%)"></td>
+        <td><input type="number" step="0.1" min="0" id="mx_af_ML" aria-label="Afiliados Mercado Livre (%)"></td>
+        <td><div class="mxin"><select class="unit" id="mxu_rebate_ML" aria-label="Unidade"><option value="%">%</option><option value="R$">R$</option></select><input type="number" step="0.01" min="0" id="mx_rebate_ML" aria-label="Rebate Mercado Livre"></div></td></tr>
+      <tr data-mxk="Shopee"><td><span class="canal" style="--c:var(--shopee)"><i></i>Shopee</span></td>
+        <td><div class="mxin"><select class="unit" id="mxu_cupom_Shopee" aria-label="Unidade"><option value="%">%</option><option value="R$">R$</option></select><input type="number" step="0.01" min="0" id="mx_cupom_Shopee" aria-label="Cupom Shopee"></div></td>
+        <td><input type="number" step="0.1" min="0" id="mx_ads_Shopee" aria-label="Ads Shopee (%)"></td>
+        <td><input type="number" step="0.1" min="0" id="mx_af_Shopee" aria-label="Afiliados Shopee (%)"></td>
+        <td><div class="mxin"><select class="unit" id="mxu_rebate_Shopee" aria-label="Unidade"><option value="%">%</option><option value="R$">R$</option></select><input type="number" step="0.01" min="0" id="mx_rebate_Shopee" aria-label="Rebate Shopee"></div></td></tr>
+      <tr data-mxk="Tiktok"><td><span class="canal" style="--c:var(--tiktok)"><i></i>TikTok Shop</span></td>
+        <td><div class="mxin"><select class="unit" id="mxu_cupom_Tiktok" aria-label="Unidade"><option value="%">%</option><option value="R$">R$</option></select><input type="number" step="0.01" min="0" id="mx_cupom_Tiktok" aria-label="Cupom TikTok Shop"></div></td>
+        <td><input type="number" step="0.1" min="0" id="mx_ads_Tiktok" aria-label="Ads TikTok Shop (%)"></td>
+        <td><input type="number" step="0.1" min="0" id="mx_af_Tiktok" aria-label="Afiliados TikTok Shop (%)"></td>
+        <td><div class="mxin"><select class="unit" id="mxu_rebate_Tiktok" aria-label="Unidade"><option value="%">%</option><option value="R$">R$</option></select><input type="number" step="0.01" min="0" id="mx_rebate_Tiktok" aria-label="Rebate TikTok Shop"></div></td></tr>
+      <tr data-mxk="Shein"><td><span class="canal" style="--c:var(--shein)"><i></i>Shein</span></td>
+        <td><div class="mxin"><select class="unit" id="mxu_cupom_Shein" aria-label="Unidade"><option value="%">%</option><option value="R$">R$</option></select><input type="number" step="0.01" min="0" id="mx_cupom_Shein" aria-label="Cupom Shein"></div></td>
+        <td><input type="number" step="0.1" min="0" id="mx_ads_Shein" aria-label="Ads Shein (%)"></td>
+        <td><input type="number" step="0.1" min="0" id="mx_af_Shein" aria-label="Afiliados Shein (%)"></td>
+        <td><div class="mxin"><select class="unit" id="mxu_rebate_Shein" aria-label="Unidade"><option value="%">%</option><option value="R$">R$</option></select><input type="number" step="0.01" min="0" id="mx_rebate_Shein" aria-label="Rebate Shein"></div></td></tr>
+    </tbody></table></div>
+    <div class="note">Campo em branco usa o padrão da aba Parâmetros de cada conta (o número cinza é o padrão da conta selecionada). Preenchido, vale pra todos os SKUs da tabela.</div>
+  </details>
   <div class="mkpis" id="mKpis"></div>
   <div class="panel hist" style="margin-top:12px">
     <div class="tbl massatbl"><table><thead id="mHead"></thead><tbody id="mBody"></tbody></table></div>
@@ -785,9 +828,23 @@ let massaCanais=ls.get('massa_canais',PLATS.map(p=>p.id)), massaLinhas=[];
 const MCOLS=[['sku','SKU'],['nome','Produto'],['conta','Conta'],['canal','Canal'],['preco','Preço de venda'],['cmv','CMV'],['imposto','Imposto'],['comissao','Comissão'],['frete','Frete'],['taxa','Taxa fixa / item'],['outras','Antecipa + eventos'],['cupom','Cupom'],['ads','Ads'],['af','Afiliados'],['rebate','Rebate'],['lucro','Lucro'],['margem','Margem %']];
 function ctxProduto(prod,margemAlvo){ const g=paramDe(prod.cliente); const n=v=>parseFloat(v)||0; const min=n(g.gMargem);
   const ctx={imposto:n(g.gImposto),margemMin:min,margem:margemAlvo!=null?margemAlvo:min,antecipa:n(g.gAntecipa),devolucao:!!g.gDevolucao,eventos:!!g.gEventos,comShein:n(g.gComShein),
-    custo:prod.cmv||0,peso:pesoFrete(prod),comPrem:num('comPrem'),comClas:num('comClas')};
+    custo:prod.cmv||0,peso:pesoFrete(prod),comPrem:num('mxComPrem'),comClas:num('mxComClas')};
   return {ctx,g}; }
-function mkPadrao(g,k){ const n=v=>parseFloat(v)||0; return {cupom:n(g['gCupom'+k]),cupomR:0,ads:n(g['gAds'+k]),af:n(g['gAf'+k]),rebate:0,rebateR:0}; }
+function mkPadrao(g,k){ const n=v=>parseFloat(v)||0; const ov=id=>{ const v=$(id).value; return v===''?null:(parseFloat(v)||0); };
+  const cup=ov('mx_cupom_'+k), uc=$('mxu_cupom_'+k).value, reb=ov('mx_rebate_'+k), ur=$('mxu_rebate_'+k).value, ads=ov('mx_ads_'+k), af=ov('mx_af_'+k);
+  const cupom= cup==null ? n(g['gCupom'+k]) : (uc==='%'?cup:0), cupomR= cup!=null&&uc==='R$' ? cup : 0;
+  return {cupom,cupomR,ads:ads==null?n(g['gAds'+k]):ads,af:af==null?n(g['gAf'+k]):af,rebate:reb!=null&&ur==='%'?reb:0,rebateR:reb!=null&&ur==='R$'?reb:0}; }
+const MX_IDS=['mxComPrem','mxComClas',...['ML','Shopee','Tiktok','Shein'].flatMap(k=>['mx_cupom_'+k,'mxu_cupom_'+k,'mx_ads_'+k,'mx_af_'+k,'mx_rebate_'+k,'mxu_rebate_'+k])];
+function initMassaParams(){ $('mxComPrem').innerHTML=$('comPrem').innerHTML; $('mxComClas').innerHTML=$('comClas').innerHTML;
+  const sv=ls.get('massa_params',{}); MX_IDS.forEach(id=>{ if(sv[id]!=null) $(id).value=sv[id]; });
+  if(!sv.mxComPrem) $('mxComPrem').value=$('comPrem').value; if(!sv.mxComClas) $('mxComClas').value=$('comClas').value;
+  [['mxComPrem','17'],['mxComClas','12']].forEach(([id,d])=>{ if($(id).selectedIndex<0) $(id).value=d; });
+  MX_IDS.forEach(id=>$(id).addEventListener('input',()=>{ const o={}; MX_IDS.forEach(i=>o[i]=$(i).value); ls.set('massa_params',o); renderMassa(); })); }
+$('btnMxLimpar').onclick=()=>{ ['ML','Shopee','Tiktok','Shein'].forEach(k=>['mx_cupom_','mx_ads_','mx_af_','mx_rebate_'].forEach(p=>$(p+k).value='')); const o={}; MX_IDS.forEach(i=>o[i]=$(i).value); ls.set('massa_params',o); renderMassa(); };
+function placeholdersMassa(){ const g=contaSel?paramDe(contaSel):null; const n=v=>String(parseFloat(v)||0).replace('.',',');
+  ['ML','Shopee','Tiktok','Shein'].forEach(k=>{ $('mx_cupom_'+k).placeholder=g?n(g['gCupom'+k])+'%':'padrão'; $('mx_ads_'+k).placeholder=g?n(g['gAds'+k]):'padrão'; $('mx_af_'+k).placeholder=g?n(g['gAf'+k]):'padrão'; $('mx_rebate_'+k).placeholder='0'; });
+  const vis=new Set(PLATS.filter(p=>massaCanais.includes(p.id)).map(p=>p.mk)); document.querySelectorAll('[data-mxk]').forEach(tr=>tr.hidden=!vis.has(tr.dataset.mxk));
+  const ov=MX_IDS.filter(id=>/^mx_/.test(id)&&$(id).value!=='').length; $('mxNota').textContent=ov?`· ${ov} campo(s) alterado(s)`:'· usando os padrões das contas'; }
 function classificar(linhas){ const o={comissao:0,frete:0,taxa:0,outras:0,cupom:0,ads:0,af:0,rebate:0};
   linhas.forEach(([lab,v])=>{ if(/^Comiss/.test(lab)) o.comissao+=v; else if(/frete/i.test(lab)) o.frete+=v; else if(/^Taxa/.test(lab)) o.taxa+=v;
     else if(/^(Antecipa|Eventos)/.test(lab)) o.outras+=v; else if(/^Cupom/.test(lab)) o.cupom+=v; else if(/^Ads/.test(lab)) o.ads+=v; else if(/^Afiliados/.test(lab)) o.af+=v; else if(/^Rebate/.test(lab)) o.rebate+=-v; });
@@ -813,7 +870,7 @@ function calcularMassa(){
 function renderMassa(){
   $('mCanais').innerHTML=PLATS.map(p=>`<button type="button" class="pill ${massaCanais.includes(p.id)?'on':''}" data-mc="${p.id}" style="--c:${p.color}"><span class="sw"></span>${p.name}</button>`).join('');
   $('mCanais').querySelectorAll('[data-mc]').forEach(b=>b.onclick=()=>{ const id=b.dataset.mc; massaCanais=massaCanais.includes(id)?massaCanais.filter(x=>x!==id):[...massaCanais,id]; ls.set('massa_canais',massaCanais); renderMassa(); });
-  massaLinhas=calcularMassa();
+  placeholdersMassa(); massaLinhas=calcularMassa();
   const ok=massaLinhas.filter(l=>!l.erro); const skus=new Set(massaLinhas.map(l=>l.conta+'|'+l.nome)).size;
   const mv=$('mMargem').value;
   $('mKpis').innerHTML=`<span>SKUs <b>${skus}</b></span><span>Linhas <b>${massaLinhas.length}</b></span><span>Margem <b>${mv===''?'mínima de cada conta':mv.replace('.',',')+'%'}</b></span><span>Conta <b>${esc(contaSel||'todas')}</b></span>${massaLinhas.length-ok.length?`<span>Sem cálculo <b style="color:var(--warn)">${massaLinhas.length-ok.length}</b></span>`:''}`;
@@ -868,6 +925,7 @@ $('btnMassaPdf').onclick=async()=>{ if(!massaLinhas.length) return notificar('Na
   try{ await downloadsNS.save({filename:nome,data:blob}); notificar('Arquivo '+nome+' salvo.'); }
   catch(e){ notificar(e&&e.code==='declined'?'Download cancelado.':'Não consegui salvar o PDF aqui.'); } };
 
+initMassaParams();
 // ===================== ABAS =====================
 document.querySelectorAll('nav.tabs button').forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
 function showTab(t){ document.querySelectorAll('nav.tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===t)); ['calc','massa','custos','param','tabelas','acessos'].forEach(x=>$('tab-'+x).hidden=x!==t); if(t==='massa') renderMassa(); }
