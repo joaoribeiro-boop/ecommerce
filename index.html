@@ -2,6 +2,8 @@
 <title>Calculadora ICOMM</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap">
 <style>
 /* Layout: três abas. Calculadora = parâmetros de marketing à esquerda (sticky) + cards de plataforma e histórico à direita; Custos = parâmetros gerais + cadastro de produtos; Tabelas = regras dos canais. Uma coluna no celular. */
@@ -194,6 +196,21 @@ details summary{cursor:pointer;font-weight:600;font-size:13px}
 .wide{grid-column:span 2}
 .mkpad td input{font:inherit;font-size:14px;color:var(--fg);background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:7px 9px;width:100%;min-width:70px;font-variant-numeric:tabular-nums}
 .mkpad td input:focus{outline:2px solid var(--accent);outline-offset:1px}
+.massactl{grid-template-columns:minmax(160px,200px) minmax(0,1fr) minmax(160px,220px) auto}
+@media (max-width:900px){.massactl{grid-template-columns:minmax(0,1fr)}}
+.mcanais{display:flex;flex-wrap:wrap;gap:6px;padding-top:2px}
+.mkpis{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.mkpis span{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:12px;color:var(--muted)}
+.mkpis b{color:var(--fg);font-variant-numeric:tabular-nums}
+.massatbl{max-height:70vh}
+.massatbl table{min-width:1250px}
+.massatbl th{position:sticky;top:0;z-index:1}
+.massatbl td.prod{white-space:normal;min-width:180px;max-width:260px}
+.massatbl td.neg{color:var(--bad)} .massatbl td.pos{color:var(--ok)}
+.massatbl td.preco{font-weight:700;color:var(--fg)}
+.massatbl tr.grp td{border-top:2px solid var(--line)}
+.massatbl .canal{display:inline-flex;align-items:center;gap:5px;font-weight:600}
+.massatbl .canal i{width:8px;height:8px;border-radius:50%;background:var(--c)}
 .cards2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
 .cards2 .panel{padding:16px;min-width:0}
 .cards2 h3{font-size:15px;margin-bottom:6px}
@@ -238,6 +255,7 @@ details summary{cursor:pointer;font-weight:600;font-size:13px}
 
 <nav class="tabs" role="tablist">
   <button role="tab" aria-selected="true" data-tab="calc">Calculadora</button>
+  <button role="tab" aria-selected="false" data-tab="massa">Em massa</button>
   <button role="tab" aria-selected="false" data-tab="custos">Produtos</button>
   <button role="tab" aria-selected="false" data-tab="param">Parâmetros</button>
   <button role="tab" aria-selected="false" data-tab="tabelas">Tabelas de custo</button>
@@ -389,6 +407,24 @@ details summary{cursor:pointer;font-weight:600;font-size:13px}
       <td><input type="number" step="0.1" min="0" id="gAdsShein" value="0" aria-label="Ads Shein (%)"></td>
       <td><input type="number" step="0.1" min="0" id="gAfShein" value="0" aria-label="Afiliados Shein (%)"></td></tr>
   </tbody></table></div>
+</section>
+
+<!-- ===== EM MASSA ===== -->
+<section id="tab-massa" role="tabpanel" hidden>
+  <div class="eyebrow">Precificação em massa</div>
+  <h2 class="t">Preço de todos os SKUs pela margem</h2>
+  <p class="lead">Calcula o preço de venda de cada produto da conta selecionada em cada canal, pra fechar na margem desejada. Cupom, Ads e afiliados vêm dos padrões da aba Parâmetros de cada conta; comissões do ML vêm da calculadora. A margem é sobre o preço líquido (preço − imposto).</p>
+  <div class="panel paramgrid massactl">
+    <label class="f pp">Margem desejada (%)<input type="number" step="0.1" id="mMargem" placeholder="vazio = mínima de cada conta"></label>
+    <div class="f"><span>Canais</span><div class="mcanais" id="mCanais"></div></div>
+    <label class="f">Buscar SKU ou nome<input type="text" id="mBusca" placeholder="filtrar a tabela"></label>
+    <div class="actions"><button class="btn primary" type="button" id="btnMassaXlsx">Exportar Excel</button><button class="btn" type="button" id="btnMassaPdf">Exportar PDF</button></div>
+  </div>
+  <div class="mkpis" id="mKpis"></div>
+  <div class="panel hist" style="margin-top:12px">
+    <div class="tbl massatbl"><table><thead id="mHead"></thead><tbody id="mBody"></tbody></table></div>
+    <div class="empty" id="mVazio" hidden></div>
+  </div>
 </section>
 
 <!-- ===== PRODUTOS ===== -->
@@ -693,6 +729,7 @@ function render(){
   $('cards').querySelectorAll('[data-fg]').forEach(i=>i.onchange=()=>{freteGratis[i.dataset.fg]=i.checked; render();});
   document.querySelectorAll('[data-pp]').forEach(i=>{ if(document.activeElement!==i) i.value=precoManual[i.dataset.pp.split(' ')[0]]??''; });
   const mk={}; MK_IDS.forEach(id=>mk[id]=$(id).value); ls.set('params_marketing',mk);
+  if(!$('tab-massa').hidden) renderMassa();
 }
 function notificar(t){ const m=$('msg'); m.textContent=t; m.hidden=false; clearTimeout(notificar.t); notificar.t=setTimeout(()=>m.hidden=true,5000); }
 function selecionarProduto(id){ prodSel=produtos.find(p=>p.id==id)||null; syncPick(); precoManual={}; freteGratis={}; editId=null; aplicarMarketingPadrao(); render(); }
@@ -743,9 +780,75 @@ function tsvHistorico(){
   return [cols,...rows].map(r=>r.join('\t')).join('\n');
 }
 
+// ===================== PRECIFICAÇÃO EM MASSA =====================
+let massaCanais=ls.get('massa_canais',PLATS.map(p=>p.id)), massaLinhas=[];
+const MCOLS=[['sku','SKU'],['nome','Produto'],['conta','Conta'],['canal','Canal'],['preco','Preço de venda'],['cmv','CMV'],['imposto','Imposto'],['comissao','Comissão'],['frete','Frete'],['taxa','Taxa fixa / item'],['outras','Antecipa + eventos'],['cupom','Cupom'],['ads','Ads'],['af','Afiliados'],['rebate','Rebate'],['lucro','Lucro'],['margem','Margem %']];
+function ctxProduto(prod,margemAlvo){ const g=paramDe(prod.cliente); const n=v=>parseFloat(v)||0; const min=n(g.gMargem);
+  const ctx={imposto:n(g.gImposto),margemMin:min,margem:margemAlvo!=null?margemAlvo:min,antecipa:n(g.gAntecipa),devolucao:!!g.gDevolucao,eventos:!!g.gEventos,comShein:n(g.gComShein),
+    custo:prod.cmv||0,peso:pesoFrete(prod),comPrem:num('comPrem'),comClas:num('comClas')};
+  return {ctx,g}; }
+function mkPadrao(g,k){ const n=v=>parseFloat(v)||0; return {cupom:n(g['gCupom'+k]),cupomR:0,ads:n(g['gAds'+k]),af:n(g['gAf'+k]),rebate:0,rebateR:0}; }
+function classificar(linhas){ const o={comissao:0,frete:0,taxa:0,outras:0,cupom:0,ads:0,af:0,rebate:0};
+  linhas.forEach(([lab,v])=>{ if(/^Comiss/.test(lab)) o.comissao+=v; else if(/frete/i.test(lab)) o.frete+=v; else if(/^Taxa/.test(lab)) o.taxa+=v;
+    else if(/^(Antecipa|Eventos)/.test(lab)) o.outras+=v; else if(/^Cupom/.test(lab)) o.cupom+=v; else if(/^Ads/.test(lab)) o.ads+=v; else if(/^Afiliados/.test(lab)) o.af+=v; else if(/^Rebate/.test(lab)) o.rebate+=-v; });
+  return o; }
+function calcularMassa(){
+  const mv=$('mMargem').value; const alvo=mv===''?null:(parseFloat(mv)||0);
+  const q=$('mBusca').value.trim().toLowerCase();
+  const lista=visiveis().filter(p=>!q||[p.nome,p.sku].join(' ').toLowerCase().includes(q)).sort((a,b)=>(a.cliente||'').localeCompare(b.cliente||'')||a.nome.localeCompare(b.nome));
+  const out=[];
+  lista.forEach(prod=>{ const {ctx,g}=ctxProduto(prod,alvo);
+    // frete do Premium = frete do Clássico
+    const plC=PLATS.find(x=>x.id==='ml_classico'); const mkC=mkPadrao(g,'ML'); let freteFixo=null;
+    if(ctx.peso>0){ const rc=plC.calc(ctxCalc(ctx,mkC),mkC); if(rc&&!rc.erro) freteFixo=custoFreteML(ctx.peso,rc.venda,false); }
+    ctx.freteFixoML=freteFixo;
+    PLATS.filter(pl=>massaCanais.includes(pl.id)).forEach(pl=>{
+      const mk=mkPadrao(g,pl.mk); const base={sku:prod.sku==='-'?'':prod.sku,nome:prod.nome,conta:prod.cliente||'',canal:pl.name,cor:pl.color,cmv:ctx.custo,margemMin:ctx.margemMin};
+      const r=pl.calc(ctxCalc(ctx,mk),mk);
+      if(!r){ out.push({...base,erro:'Sem peso ou dimensões'}); return; }
+      if(r.erro){ out.push({...base,erro:r.erro}); return; }
+      const b=breakdown(pl,r.venda,ctx,mk,false); const c=classificar(b.linhas);
+      out.push({...base,preco:r.venda,imposto:b.imposto,...c,lucro:b.lucro,margem:b.margem}); }); });
+  return out; }
+function renderMassa(){
+  $('mCanais').innerHTML=PLATS.map(p=>`<button type="button" class="pill ${massaCanais.includes(p.id)?'on':''}" data-mc="${p.id}" style="--c:${p.color}"><span class="sw"></span>${p.name}</button>`).join('');
+  $('mCanais').querySelectorAll('[data-mc]').forEach(b=>b.onclick=()=>{ const id=b.dataset.mc; massaCanais=massaCanais.includes(id)?massaCanais.filter(x=>x!==id):[...massaCanais,id]; ls.set('massa_canais',massaCanais); renderMassa(); });
+  massaLinhas=calcularMassa();
+  const ok=massaLinhas.filter(l=>!l.erro); const skus=new Set(massaLinhas.map(l=>l.conta+'|'+l.nome)).size;
+  const mv=$('mMargem').value;
+  $('mKpis').innerHTML=`<span>SKUs <b>${skus}</b></span><span>Linhas <b>${massaLinhas.length}</b></span><span>Margem <b>${mv===''?'mínima de cada conta':mv.replace('.',',')+'%'}</b></span><span>Conta <b>${esc(contaSel||'todas')}</b></span>${massaLinhas.length-ok.length?`<span>Sem cálculo <b style="color:var(--warn)">${massaLinhas.length-ok.length}</b></span>`:''}`;
+  $('mHead').innerHTML='<tr>'+MCOLS.map(([k,h])=>`<th class="${['sku','nome','conta','canal'].includes(k)?'':'n'}">${h}</th>`).join('')+'</tr>';
+  const R=v=>BRL(v), N=v=>v?'−'+BRL(v):'—';
+  let ult='';
+  $('mBody').innerHTML=massaLinhas.map(l=>{ const novo=(l.conta+'|'+l.nome)!==ult; ult=l.conta+'|'+l.nome;
+    const ident=`<td>${esc(l.sku||'—')}</td><td class="prod">${esc(l.nome)}</td><td>${esc(l.conta)}</td><td><span class="canal" style="--c:${l.cor}"><i></i>${esc(l.canal)}</span></td>`;
+    if(l.erro) return `<tr class="${novo?'grp':''}">${ident}<td colspan="${MCOLS.length-4}" class="note">${esc(l.erro)}</td></tr>`;
+    return `<tr class="${novo?'grp':''}">${ident}<td class="n preco">${R(l.preco)}</td><td class="n neg">${N(l.cmv)}</td><td class="n neg">${N(l.imposto)}</td><td class="n neg">${N(l.comissao)}</td><td class="n neg">${N(l.frete)}</td><td class="n neg">${N(l.taxa)}</td><td class="n neg">${N(l.outras)}</td><td class="n neg">${N(l.cupom)}</td><td class="n neg">${N(l.ads)}</td><td class="n neg">${N(l.af)}</td><td class="n pos">${l.rebate?'+'+BRL(l.rebate):'—'}</td><td class="n" style="font-weight:600">${R(l.lucro)}</td><td class="n"><span class="chip ${l.lucro<0?'':parseFloat(l.margem.toFixed(1))>=l.margemMin?'ok':'warn'}">${l.margem.toFixed(1).replace('.',',')}%</span></td></tr>`; }).join('');
+  $('mVazio').hidden=massaLinhas.length>0; $('mVazio').textContent=visiveis().length?'Nenhum produto com esse filtro.':'Nenhum produto cadastrado nesta conta. Cadastre na aba Produtos ou importe a planilha.';
+}
+$('mMargem').addEventListener('input',renderMassa); $('mBusca').addEventListener('input',renderMassa);
+const r2=v=>v==null?'':Math.round(v*100)/100;
+function linhasMassaAoA(){ return [MCOLS.map(c=>c[1]), ...massaLinhas.map(l=>l.erro?[l.sku,l.nome,l.conta,l.canal,l.erro]:[l.sku,l.nome,l.conta,l.canal,r2(l.preco),r2(l.cmv),r2(l.imposto),r2(l.comissao),r2(l.frete),r2(l.taxa),r2(l.outras),r2(l.cupom),r2(l.ads),r2(l.af),r2(l.rebate),r2(l.lucro),r2(l.margem)])]; }
+$('btnMassaXlsx').onclick=()=>{ if(!massaLinhas.length) return notificar('Nada pra exportar.'); const aoa=linhasMassaAoA();
+  baixarXlsx(`precificacao-${slug(contaSel)}-${hojeStr()}.xlsx`,'Precificação',aoa,[12,34,18,13,13,11,11,11,11,13,13,10,10,10,10,11,10],aoa.map(r=>r.join('\t')).join('\n'),'Precificação em massa'); };
+$('btnMassaPdf').onclick=async()=>{ if(!massaLinhas.length) return notificar('Nada pra exportar.');
+  if(!window.jspdf){ return notificar('Não consegui carregar o gerador de PDF. Recarregue a página e tente de novo.'); }
+  const {jsPDF}=window.jspdf; const doc=new jsPDF({orientation:'landscape',unit:'pt',format:'a4'});
+  const mv=$('mMargem').value; const fmt=v=>v==null||v===''?'':Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  doc.setFontSize(14); doc.setTextColor(106,44,158); doc.text('Calculadora ICOMM — Precificação em massa',30,32);
+  doc.setFontSize(9); doc.setTextColor(90,90,90); doc.text(`Conta: ${contaSel||'todas'}   ·   Margem: ${mv===''?'mínima de cada conta':mv.replace('.',',')+'% sobre o preço líquido'}   ·   ${new Date().toLocaleDateString('pt-BR')}`,30,48);
+  const body=massaLinhas.map(l=>l.erro?[l.sku,l.nome,l.conta,l.canal,{content:l.erro,colSpan:13,styles:{halign:'left',textColor:[150,90,0]}}]:[l.sku,l.nome,l.conta,l.canal,fmt(l.preco),fmt(l.cmv),fmt(l.imposto),fmt(l.comissao),fmt(l.frete),fmt(l.taxa),fmt(l.outras),fmt(l.cupom),fmt(l.ads),fmt(l.af),fmt(l.rebate),fmt(l.lucro),fmt(l.margem)+'%']);
+  doc.autoTable({startY:58,head:[MCOLS.map(c=>c[1])],body,styles:{fontSize:6.5,cellPadding:2.5,overflow:'linebreak'},headStyles:{fillColor:[106,44,158],textColor:255,fontSize:6.5},
+    columnStyles:Object.fromEntries(MCOLS.map((c,i)=>[i,i>=4?{halign:'right'}:{}]).concat([[1,{cellWidth:110}]])),alternateRowStyles:{fillColor:[246,243,250]},margin:{left:20,right:20}});
+  const blob=doc.output('blob'); const nome=`precificacao-${slug(contaSel)}-${hojeStr()}.pdf`;
+  if(!downloadsNS && !window.claude){ doc.save(nome); notificar('Arquivo '+nome+' baixado.'); return; }
+  if(!downloadsNS) return notificar('Download indisponível nesta visualização.');
+  try{ await downloadsNS.save({filename:nome,data:blob}); notificar('Arquivo '+nome+' salvo.'); }
+  catch(e){ notificar(e&&e.code==='declined'?'Download cancelado.':'Não consegui salvar o PDF aqui.'); } };
+
 // ===================== ABAS =====================
 document.querySelectorAll('nav.tabs button').forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
-function showTab(t){ document.querySelectorAll('nav.tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===t)); ['calc','custos','param','tabelas','acessos'].forEach(x=>$('tab-'+x).hidden=x!==t); }
+function showTab(t){ document.querySelectorAll('nav.tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===t)); ['calc','massa','custos','param','tabelas','acessos'].forEach(x=>$('tab-'+x).hidden=x!==t); if(t==='massa') renderMassa(); }
 
 // ===================== CUSTOS: parâmetros gerais + produtos =====================
 function salvarGlobais(){ const g={}; G_IDS.forEach(id=>g[id]=$(id).value); g.gDevolucao=$('gDevolucao').checked; g.gEventos=$('gEventos').checked; parametros[contaSel||'_default']=g; persistParam(contaSel||'_default',g); if(prodSel&&(prodSel.cliente||'')===(contaSel||'')) aplicarMarketingPadrao(); render(); atualizarBackup(); }
