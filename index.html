@@ -828,18 +828,40 @@ function renderMassa(){
 }
 $('mMargem').addEventListener('input',renderMassa); $('mBusca').addEventListener('input',renderMassa);
 const r2=v=>v==null?'':Math.round(v*100)/100;
-function linhasMassaAoA(){ return [MCOLS.map(c=>c[1]), ...massaLinhas.map(l=>l.erro?[l.sku,l.nome,l.conta,l.canal,l.erro]:[l.sku,l.nome,l.conta,l.canal,r2(l.preco),r2(l.cmv),r2(l.imposto),r2(l.comissao),r2(l.frete),r2(l.taxa),r2(l.outras),r2(l.cupom),r2(l.ads),r2(l.af),r2(l.rebate),r2(l.lucro),r2(l.margem)])]; }
-$('btnMassaXlsx').onclick=()=>{ if(!massaLinhas.length) return notificar('Nada pra exportar.'); const aoa=linhasMassaAoA();
-  baixarXlsx(`precificacao-${slug(contaSel)}-${hojeStr()}.xlsx`,'Precificação',aoa,[12,34,18,13,13,11,11,11,11,13,13,10,10,10,10,11,10],aoa.map(r=>r.join('\t')).join('\n'),'Precificação em massa'); };
+// colunas que sempre aparecem; as de custo só entram no canal em que existem
+const MFIXAS=['sku','nome','conta','preco','cmv','imposto','lucro','margem'];
+function porCanal(){ return PLATS.filter(p=>massaCanais.includes(p.id)).map(pl=>{ const linhas=massaLinhas.filter(l=>l.canal===pl.name);
+  const cols=MCOLS.filter(([k])=>k!=='canal' && (MFIXAS.includes(k) || linhas.some(l=>!l.erro && Math.abs(l[k]||0)>0.004)));
+  return {pl,linhas,cols}; }).filter(g=>g.linhas.length); }
+const valorCol=(l,k)=>['sku','nome','conta'].includes(k)?(l[k]||''):r2(l[k]);
+const LARG={sku:12,nome:36,conta:18,preco:14,cmv:11,imposto:11,comissao:11,frete:11,taxa:14,outras:14,cupom:10,ads:10,af:10,rebate:10,lucro:11,margem:10};
+$('btnMassaXlsx').onclick=()=>{ if(!massaLinhas.length) return notificar('Nada pra exportar.');
+  const grupos=porCanal();
+  // Resumo: um SKU por linha, preço e margem de cada canal
+  const skus=[]; const vist=new Set(); massaLinhas.forEach(l=>{ const k=l.conta+'|'+l.nome; if(!vist.has(k)){ vist.add(k); skus.push(l); } });
+  const resumo=[['SKU','Produto','Conta',...grupos.flatMap(g=>[g.pl.name+' preço',g.pl.name+' margem %'])],
+    ...skus.map(s=>[s.sku,s.nome,s.conta,...grupos.flatMap(g=>{ const l=g.linhas.find(x=>x.conta===s.conta&&x.nome===s.nome); return !l?['','']:l.erro?[l.erro,'']:[r2(l.preco),r2(l.margem)]; })])];
+  const abas=[{nome:'Resumo',linhas:resumo,larguras:[12,36,18,...grupos.flatMap(()=>[16,14])]},
+    ...grupos.map(g=>({nome:g.pl.name,larguras:g.cols.map(([k])=>LARG[k]||12),
+      linhas:[g.cols.map(c=>c[1]),...g.linhas.map(l=>l.erro?[l.sku,l.nome,l.conta,l.erro]:g.cols.map(([k])=>valorCol(l,k)))]}))];
+  const tsv=abas.slice(1).map(a=>a.nome+'\n'+a.linhas.map(r=>r.join('\t')).join('\n')).join('\n\n');
+  baixarXlsxAbas(`precificacao-${slug(contaSel)}-${hojeStr()}.xlsx`,abas,tsv,'Precificação em massa'); };
 $('btnMassaPdf').onclick=async()=>{ if(!massaLinhas.length) return notificar('Nada pra exportar.');
   if(!window.jspdf){ return notificar('Não consegui carregar o gerador de PDF. Recarregue a página e tente de novo.'); }
   const {jsPDF}=window.jspdf; const doc=new jsPDF({orientation:'landscape',unit:'pt',format:'a4'});
   const mv=$('mMargem').value; const fmt=v=>v==null||v===''?'':Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
-  doc.setFontSize(14); doc.setTextColor(106,44,158); doc.text('Calculadora ICOMM — Precificação em massa',30,32);
-  doc.setFontSize(9); doc.setTextColor(90,90,90); doc.text(`Conta: ${contaSel||'todas'}   ·   Margem: ${mv===''?'mínima de cada conta':mv.replace('.',',')+'% sobre o preço líquido'}   ·   ${new Date().toLocaleDateString('pt-BR')}`,30,48);
-  const body=massaLinhas.map(l=>l.erro?[l.sku,l.nome,l.conta,l.canal,{content:l.erro,colSpan:13,styles:{halign:'left',textColor:[150,90,0]}}]:[l.sku,l.nome,l.conta,l.canal,fmt(l.preco),fmt(l.cmv),fmt(l.imposto),fmt(l.comissao),fmt(l.frete),fmt(l.taxa),fmt(l.outras),fmt(l.cupom),fmt(l.ads),fmt(l.af),fmt(l.rebate),fmt(l.lucro),fmt(l.margem)+'%']);
-  doc.autoTable({startY:58,head:[MCOLS.map(c=>c[1])],body,styles:{fontSize:6.5,cellPadding:2.5,overflow:'linebreak'},headStyles:{fillColor:[106,44,158],textColor:255,fontSize:6.5},
-    columnStyles:Object.fromEntries(MCOLS.map((c,i)=>[i,i>=4?{halign:'right'}:{}]).concat([[1,{cellWidth:110}]])),alternateRowStyles:{fillColor:[246,243,250]},margin:{left:20,right:20}});
+  const CORES={ml_premium:[46,157,90],ml_classico:[200,150,0],shopee:[238,77,45],tiktok:[214,41,79],shein:[29,28,25]};
+  const sub=`Conta: ${contaSel||'todas'}   |   Margem: ${mv===''?'mínima de cada conta':mv.replace('.',',')+'% sobre o preço líquido'}   |   ${new Date().toLocaleDateString('pt-BR')}`;
+  porCanal().forEach((g,i)=>{ if(i) doc.addPage();
+    const cor=CORES[g.pl.id]||[106,44,158];
+    doc.setFontSize(9); doc.setTextColor(106,44,158); doc.text('Calculadora ICOMM — Precificação em massa',30,26);
+    doc.setFontSize(18); doc.setTextColor(...cor); doc.text(g.pl.name,30,50);
+    doc.setFontSize(9); doc.setTextColor(90,90,90); doc.text(sub,30,66);
+    const nCol=g.cols.length;
+    const body=g.linhas.map(l=>l.erro?[l.sku,l.nome,l.conta,{content:l.erro,colSpan:nCol-3,styles:{halign:'left',textColor:[150,90,0]}}]:g.cols.map(([k])=>['sku','nome','conta'].includes(k)?(l[k]||''):k==='margem'?fmt(l[k])+'%':fmt(l[k])));
+    doc.autoTable({startY:76,head:[g.cols.map(c=>c[1])],body,styles:{fontSize:7.5,cellPadding:3,overflow:'linebreak'},headStyles:{fillColor:cor,textColor:255,fontSize:7.5},
+      columnStyles:Object.fromEntries(g.cols.map(([k],j)=>[j,['sku','nome','conta'].includes(k)?(k==='nome'?{cellWidth:150}:{}):{halign:'right'}])),
+      alternateRowStyles:{fillColor:[246,243,250]},margin:{left:24,right:24}}); });
   const blob=doc.output('blob'); const nome=`precificacao-${slug(contaSel)}-${hojeStr()}.pdf`;
   if(!downloadsNS && !window.claude){ doc.save(nome); notificar('Arquivo '+nome+' baixado.'); return; }
   if(!downloadsNS) return notificar('Download indisponível nesta visualização.');
@@ -907,8 +929,10 @@ let downloadsNS=null; try{ window.claude?.use?.('downloads')?.then(d=>{downloads
 const hojeStr=()=>new Date().toISOString().slice(0,10);
 const slug=t=>String(t||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^A-Za-z0-9]+/g,'-').replace(/^-|-$/g,'')||'todas';
 async function baixarXlsx(nomeArq, aba, linhas, larguras, tsvFallback, tituloFallback){
-  const ws=XLSX.utils.aoa_to_sheet(linhas); if(larguras) ws['!cols']=larguras.map(w=>({wch:w}));
-  const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,aba.slice(0,31));
+  return baixarXlsxAbas(nomeArq,[{nome:aba,linhas,larguras}],tsvFallback,tituloFallback); }
+async function baixarXlsxAbas(nomeArq, abas, tsvFallback, tituloFallback){
+  const wb=XLSX.utils.book_new();
+  abas.forEach(a=>{ const ws=XLSX.utils.aoa_to_sheet(a.linhas); if(a.larguras) ws['!cols']=a.larguras.map(w=>({wch:w})); XLSX.utils.book_append_sheet(wb,ws,a.nome.replace(/[\\/?*\[\]:]/g,' ').slice(0,31)); });
   const buf=XLSX.write(wb,{bookType:'xlsx',type:'array'});
   if(!downloadsNS && !window.claude){ try{ XLSX.writeFile(wb,nomeArq); notificar('Arquivo '+nomeArq+' baixado.'); return; }catch(e){} }
   if(!downloadsNS){ return copiarTexto(tsvFallback,'Download indisponível nesta visualização. Tabela copiada pra colar no Excel.',tituloFallback); }
