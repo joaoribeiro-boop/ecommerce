@@ -11,7 +11,7 @@
   --bg:#f5f4f0; --panel:#ffffff; --panel2:#f0efea; --line:#dcdad2; --fg:#1d1c19; --muted:#6f6c62;
   --accent:#7b35b5; --accent-fg:#ffffff; --brand:#6a2c9e;
   --ok:#1f8a4c; --ok-bg:#e3f4ea; --warn:#b4650c; --warn-bg:#fbeedb; --bad:#c23a2b; --bad-bg:#fae4e1; --info:#2457a8; --info-bg:#e4ecfa;
-  --ml-prem:#2e9d5a; --ml-clas:#e1b000; --shopee:#ee4d2d; --tiktok:#d6294f; --shein:#1d1c19;
+  --ml-prem:#2e9d5a; --ml-clas:#e1b000; --shopee:#ee4d2d; --tiktok:#d6294f; --shein:#1d1c19; --magalu:#0086ff;
   --display:"Sora",system-ui,sans-serif; --body:"IBM Plex Sans",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
   --r:10px; --shadow:0 1px 2px rgba(20,18,10,.06),0 6px 20px -8px rgba(20,18,10,.12);
 }
@@ -19,13 +19,13 @@
   --bg:#141412; --panel:#1e1e1b; --panel2:#262623; --line:#36362f; --fg:#efede6; --muted:#a19d90;
   --accent:#a96be0; --accent-fg:#ffffff; --brand:#c08cf0;
   --ok:#5ccb84; --ok-bg:#163c25; --warn:#f0a94a; --warn-bg:#3d2a10; --bad:#ff7a6b; --bad-bg:#44201b; --info:#7fa8f0; --info-bg:#1b2a47;
-  --ml-prem:#4cc77a; --ml-clas:#ffd23f; --shopee:#ff6a3d; --tiktok:#ff5c7f; --shein:#efede6;
+  --ml-prem:#4cc77a; --ml-clas:#ffd23f; --shopee:#ff6a3d; --tiktok:#ff5c7f; --shein:#efede6; --magalu:#4aa8ff;
   --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -10px rgba(0,0,0,.6); color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#141412; --panel:#1e1e1b; --panel2:#262623; --line:#36362f; --fg:#efede6; --muted:#a19d90;
   --accent:#a96be0; --accent-fg:#ffffff; --brand:#c08cf0;
   --ok:#5ccb84; --ok-bg:#163c25; --warn:#f0a94a; --warn-bg:#3d2a10; --bad:#ff7a6b; --bad-bg:#44201b; --info:#7fa8f0; --info-bg:#1b2a47;
-  --ml-prem:#4cc77a; --ml-clas:#ffd23f; --shopee:#ff6a3d; --tiktok:#ff5c7f; --shein:#efede6;
+  --ml-prem:#4cc77a; --ml-clas:#ffd23f; --shopee:#ff6a3d; --tiktok:#ff5c7f; --shein:#efede6; --magalu:#4aa8ff;
   --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -10px rgba(0,0,0,.6); color-scheme:dark}
 *{box-sizing:border-box}
 .login{position:fixed;inset:0;z-index:50;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:16px}
@@ -249,7 +249,7 @@ details summary{cursor:pointer;font-weight:600;font-size:13px}
 <header class="top">
   <div>
     <h1>Calculadora ICOMM</h1>
-    <p>Preço e margem real no ML, Shopee, TikTok Shop e Shein.</p>
+    <p>Preço e margem real no ML, Shopee, TikTok Shop, Shein e Magalu.</p>
   </div>
   <div class="actions" style="align-items:flex-end">
     <label class="hconta"><span>Conta</span><select class="sel" id="contaSel"><option value="">Todas as contas</option></select></label>
@@ -348,6 +348,21 @@ details summary{cursor:pointer;font-weight:600;font-size:13px}
 
   </fieldset>
 
+  <fieldset class="sec" data-mk="magalu">
+    <legend><span class="dot" style="background:var(--magalu)"></span>Magalu</legend>
+    <label class="f pp ppbox">Preço praticado (R$)<input type="number" step="0.01" min="0" data-pp="magalu" placeholder="vazio = sugerido pela margem mínima"></label>
+    <div class="row3">
+      <label class="f">Comissão<select class="sel" id="comMagalu"><option value="9.9">9,90%</option><option value="10">10,00%</option><option value="11">11,00%</option><option value="12">12,00%</option><option value="13">13,00%</option><option value="14">14,00%</option><option value="15">15,00%</option><option value="16" selected>16,00%</option><option value="17">17,00%</option><option value="18">18,00%</option><option value="19">19,00%</option><option value="20">20,00%</option></select></label>
+      <label class="f" title="Reputação da conta: define a coluna da tabela de frete da Magalu">Reputação<select class="sel" id="repMagalu"><option value="sem">&lt; 97% (cheio)</option><option value="desc">≥ 97% (−50%)</option><option value="ful">Fulfillment</option></select></label>
+      <div class="f"><span class="lblu">Rebate <select class="unit" id="uRebateMagalu" aria-label="Unidade"><option value="%">%</option><option value="R$">R$</option></select></span><input type="number" step="0.01" min="0" id="rebateMagalu" value="0" aria-label="Rebate"></div>
+    </div>
+    <div class="row3">
+      <div class="f"><span class="lblu">Cupom <select class="unit" id="uCupomMagalu" aria-label="Unidade"><option value="%">%</option><option value="R$">R$</option></select></span><input type="number" step="0.01" min="0" id="cupomMagalu" value="0" aria-label="Cupom"></div>
+      <label class="f">Ads (%)<input type="number" step="0.1" min="0" id="adsMagalu" value="0"></label>
+      <label class="f">Afiliados (%)<input type="number" step="0.1" min="0" id="afMagalu" value="0"></label>
+    </div>
+  </fieldset>
+
   <div id="erro" class="msg err" hidden></div>
   <div class="actions">
     <button class="btn primary" id="btnSalvar" type="button">Salvar simulação</button>
@@ -369,7 +384,7 @@ details summary{cursor:pointer;font-weight:600;font-size:13px}
       </div>
     </div>
     <div class="tbl"><table>
-      <thead><tr><th>Produto</th><th>Conta</th><th class="n">Custo</th><th class="n">ML Premium</th><th class="n">ML Clássico</th><th class="n">Shopee</th><th class="n">TikTok</th><th class="n">Shein</th><th></th></tr></thead>
+      <thead><tr><th>Produto</th><th>Conta</th><th class="n">Custo</th><th class="n">ML Premium</th><th class="n">ML Clássico</th><th class="n">Shopee</th><th class="n">TikTok</th><th class="n">Shein</th><th class="n">Magalu</th><th></th></tr></thead>
       <tbody id="histBody"></tbody>
     </table></div>
     <div class="empty" id="histEmpty"></div>
@@ -398,6 +413,8 @@ details summary{cursor:pointer;font-weight:600;font-size:13px}
     <label class="chk"><input type="checkbox" id="gDevolucao"> Devolução Fácil (R$ 0,49/item)</label>
     <label class="chk"><input type="checkbox" id="gEventos"> Eventos oficiais Shopee (+2,5%)</label>
     <label class="f">Comissão Shein (%)<input type="number" step="0.1" min="0" id="gComShein" value="20"></label>
+    <label class="f">Comissão Magalu<select class="sel" id="gComMagalu"><option value="9.9">9,90%</option><option value="10">10,00%</option><option value="11">11,00%</option><option value="12">12,00%</option><option value="13">13,00%</option><option value="14">14,00%</option><option value="15">15,00%</option><option value="16" selected>16,00%</option><option value="17">17,00%</option><option value="18">18,00%</option><option value="19">19,00%</option><option value="20">20,00%</option></select></label>
+    <label class="f">Reputação Magalu<select class="sel" id="gRepMagalu"><option value="sem">&lt; 97% (cheio)</option><option value="desc">≥ 97% (−50%)</option><option value="ful">Fulfillment</option></select></label>
   </div>
   <h2 class="t" style="margin-top:22px;font-size:17px">Marketing padrão por canal</h2>
   <p class="lead">Preenche cupom, Ads e afiliados na calculadora quando você escolhe um produto desta conta. Dá pra ajustar na calculadora sem mudar o padrão.</p>
@@ -418,6 +435,10 @@ details summary{cursor:pointer;font-weight:600;font-size:13px}
       <td><input type="number" step="0.1" min="0" id="gCupomShein" value="0" aria-label="Cupom Shein (%)"></td>
       <td><input type="number" step="0.1" min="0" id="gAdsShein" value="0" aria-label="Ads Shein (%)"></td>
       <td><input type="number" step="0.1" min="0" id="gAfShein" value="0" aria-label="Afiliados Shein (%)"></td></tr>
+    <tr><td><span class="dot" style="background:var(--magalu);display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:6px"></span>Magalu</td>
+      <td><input type="number" step="0.1" min="0" id="gCupomMagalu" value="0" aria-label="Cupom Magalu (%)"></td>
+      <td><input type="number" step="0.1" min="0" id="gAdsMagalu" value="0" aria-label="Ads Magalu (%)"></td>
+      <td><input type="number" step="0.1" min="0" id="gAfMagalu" value="0" aria-label="Afiliados Magalu (%)"></td></tr>
   </tbody></table></div>
 </section>
 
@@ -437,6 +458,8 @@ details summary{cursor:pointer;font-weight:600;font-size:13px}
     <div class="mxtop">
       <label class="f">Com. Premium<select class="sel" id="mxComPrem"></select></label>
       <label class="f">Com. Clássico<select class="sel" id="mxComClas"></select></label>
+      <label class="f">Com. Magalu<select class="sel" id="mxComMagalu"><option value="">Padrão da conta</option><option value="9.9">9,90%</option><option value="10">10,00%</option><option value="11">11,00%</option><option value="12">12,00%</option><option value="13">13,00%</option><option value="14">14,00%</option><option value="15">15,00%</option><option value="16">16,00%</option><option value="17">17,00%</option><option value="18">18,00%</option><option value="19">19,00%</option><option value="20">20,00%</option></select></label>
+      <label class="f">Reputação Magalu<select class="sel" id="mxRepMagalu"><option value="">Padrão da conta</option><option value="sem">&lt; 97% (cheio)</option><option value="desc">≥ 97% (−50%)</option><option value="ful">Fulfillment</option></select></label>
       <div class="actions" style="align-self:end"><button class="btn sm" type="button" id="btnMxLimpar">Voltar aos padrões das contas</button></div>
     </div>
     <div class="tbl small mkpad mxtbl"><table><thead><tr><th>Canal</th><th>Cupom</th><th>Ads (%)</th><th>Afiliados (%)</th><th>Rebate</th></tr></thead><tbody>
@@ -460,6 +483,11 @@ details summary{cursor:pointer;font-weight:600;font-size:13px}
         <td><input type="number" step="0.1" min="0" id="mx_ads_Shein" aria-label="Ads Shein (%)"></td>
         <td><input type="number" step="0.1" min="0" id="mx_af_Shein" aria-label="Afiliados Shein (%)"></td>
         <td><div class="mxin"><select class="unit" id="mxu_rebate_Shein" aria-label="Unidade"><option value="%">%</option><option value="R$">R$</option></select><input type="number" step="0.01" min="0" id="mx_rebate_Shein" aria-label="Rebate Shein"></div></td></tr>
+      <tr data-mxk="Magalu"><td><span class="canal" style="--c:var(--magalu)"><i></i>Magalu</span></td>
+        <td><div class="mxin"><select class="unit" id="mxu_cupom_Magalu" aria-label="Unidade"><option value="%">%</option><option value="R$">R$</option></select><input type="number" step="0.01" min="0" id="mx_cupom_Magalu" aria-label="Cupom Magalu"></div></td>
+        <td><input type="number" step="0.1" min="0" id="mx_ads_Magalu" aria-label="Ads Magalu (%)"></td>
+        <td><input type="number" step="0.1" min="0" id="mx_af_Magalu" aria-label="Afiliados Magalu (%)"></td>
+        <td><div class="mxin"><select class="unit" id="mxu_rebate_Magalu" aria-label="Unidade"><option value="%">%</option><option value="R$">R$</option></select><input type="number" step="0.01" min="0" id="mx_rebate_Magalu" aria-label="Rebate Magalu"></div></td></tr>
     </tbody></table></div>
     <div class="note">Campo em branco usa o padrão da aba Parâmetros de cada conta (o número cinza é o padrão da conta selecionada). Preenchido, vale pra todos os SKUs da tabela.</div>
   </details>
@@ -544,6 +572,11 @@ details summary{cursor:pointer;font-weight:600;font-size:13px}
     <div class="hd"><h2>Frete Mercado Livre por peso e faixa de preço</h2></div>
     <div class="tbl"><table id="tblML"><thead></thead><tbody></tbody></table></div>
   </div>
+  <div class="panel hist" style="margin-top:14px">
+    <div class="hd"><h2 style="color:var(--magalu)">Magalu: frete por peso, faixa de preço e reputação</h2></div>
+    <p class="note" style="margin:0 0 8px">Comissão de 9,9% a 20% (escolhida na calculadora) + taxa fixa de R$ 5,00 por item. Sem frete grátis opcional. Abaixo de R$ 79 o frete é um % do preço: 3% no Fulfillment, 4% em Coleta e Entrega. A partir de R$ 79 vale a tabela abaixo, pelo peso (maior entre real e cubado) e pela reputação marcada.</p>
+    <div class="tbl"><table id="tblMagalu"><thead></thead><tbody></tbody></table></div>
+  </div>
 </section>
 </div>
 
@@ -612,6 +645,23 @@ function precoShein(custo, peso, pctExtra, comissao){
   return {venda:(custo+freteShein(peso))/(1-s)};
 }
 
+// Magalu: [limite de peso kg, 79–199: sem desconto, ≥97% (−50%), Fulfillment] e [acima de 199: idem]
+const MAGALU_PESOS=[0.5,1,2,5,9,13,17,23,30,40,50,60,70,80,90,100,110,120,130,140,150,160,170,180,190,200,Infinity];
+const MAGALU_A=[[35.9,17.95,8.98],[40.9,20.45,10.23],[42.9,21.45,10.73],[50.9,25.45,12.73],[77.9,38.95,19.48],[98.9,49.45,24.73],[111.9,55.95,27.98],[134.9,67.45,33.73],[148.9,74.45,37.23],[159.9,79.95,39.98],[189.9,94.95,47.48],[197.9,98.95,49.48],[206.9,103.45,51.73],[215.9,107.95,53.98],[225.9,112.95,56.48],[235.9,117.95,58.98],[245.9,122.95,61.48],[256.9,128.45,64.23],[267.9,133.95,66.98],[279.9,139.95,69.98],[291.9,145.95,72.98],[304.9,152.45,76.23],[317.9,158.95,79.48],[331.9,165.95,82.98],[345.9,172.95,86.48],[360.9,180.45,90.23],[375.9,187.95,93.98]];
+const MAGALU_B=[[38.9,19.45,11.67],[44.9,22.45,13.47],[46.9,23.45,14.07],[54.9,27.45,16.47],[84.9,42.45,25.47],[106.9,53.45,32.07],[120.9,60.45,36.27],[145.9,72.95,43.77],[160.9,80.45,48.27],[172.9,86.45,51.87],[205.9,102.95,61.77],[213.9,106.95,64.17],[223.9,111.95,67.17],[233.9,116.95,70.17],[243.9,121.95,73.17],[254.9,127.45,76.47],[265.9,132.95,79.77],[277.9,138.95,83.37],[289.9,144.95,86.97],[302.9,151.45,90.87],[315.9,157.95,94.77],[329.9,164.95,98.97],[343.9,171.95,103.17],[358.9,179.45,107.67],[373.9,186.95,112.17],[389.9,194.95,116.97],[405.9,202.95,121.77]];
+const MAGALU_TAXA=5, MAGALU_REP={sem:0,desc:1,ful:2};
+const MAGALU_REP_NOME={sem:'abaixo de 97%',desc:'97% ou mais',ful:'Fulfillment'};
+const pctMagalu=rep=>rep==='ful'?3:4;
+function freteMagaluFixo(peso,faixaB,rep){ const i=MAGALU_PESOS.findIndex(m=>peso<=m); return (faixaB?MAGALU_B:MAGALU_A)[i<0?MAGALU_PESOS.length-1:i][MAGALU_REP[rep]??0]; }
+function freteMagalu(peso,preco,rep){ if(preco<79) return preco*pctMagalu(rep)/100; return freteMagaluFixo(peso,preco>199,rep); }
+function precoMagalu(custo,peso,pctExtra,comissao,rep){
+  const s=(pctExtra+comissao)/100, pct=pctMagalu(rep)/100;
+  if (s+pct>=1) return {erro:'A soma de margem + imposto + comissão + cupom + ads + afiliados (Magalu) supera 100%.'};
+  const a=(custo+MAGALU_TAXA)/(1-s-pct); if(a<79) return {venda:a};
+  const b=(custo+MAGALU_TAXA+freteMagaluFixo(peso,false,rep))/(1-s); if(b<=199) return {venda:Math.max(b,79)};
+  const c=(custo+MAGALU_TAXA+freteMagaluFixo(peso,true,rep))/(1-s); return {venda:Math.max(c,199.01)};
+}
+
 // ===================== PLATAFORMAS =====================
 // mk = {cupom, ads, af} do canal; ctx = produto + parâmetros gerais
 const fmtR=v=>'R$ '+Number(v).toFixed(2).replace('.',',');
@@ -642,7 +692,12 @@ const PLATS=[
  {id:'shein',name:'Shein',color:'var(--shein)',mk:'Shein',
   calc:(c,mk)=>{ if(!(c.peso>0)) return null; return precoShein(c.custo,c.peso,extra(c,mk),c.comShein); },
   det:(p,c,mk)=>{ const com=p*c.comShein/100, fr=freteShein(c.peso); const m=mkLines(p,mk);
-    return {custos:[com,fr,...m.map(x=>x[1])], linhas:[['Comissão ('+c.comShein+'%)',com],['Frete (por peso)',fr],...m]}; }}
+    return {custos:[com,fr,...m.map(x=>x[1])], linhas:[['Comissão ('+c.comShein+'%)',com],['Frete (por peso)',fr],...m]}; }},
+ {id:'magalu',name:'Magalu',color:'var(--magalu)',mk:'Magalu',
+  calc:(c,mk)=>{ if(!(c.peso>0)) return null; return precoMagalu(c.custo,c.peso,extra(c,mk),c.comMagalu,c.repMagalu); },
+  det:(p,c,mk)=>{ const com=p*c.comMagalu/100, fr=freteMagalu(c.peso,p,c.repMagalu); const m=mkLines(p,mk);
+    const lf=p<79?'Frete ('+pctMagalu(c.repMagalu)+'% do preço)':'Frete ('+(p>199?'acima de R$ 199':'R$ 79 a 199')+' · '+MAGALU_REP_NOME[c.repMagalu]+')';
+    return {custos:[com,MAGALU_TAXA,fr,...m.map(x=>x[1])], linhas:[['Comissão ('+String(c.comMagalu).replace('.',',')+'%)',com],['Taxa fixa por item',MAGALU_TAXA],[lf,fr],...m]}; }}
 ];
 function breakdown(plat, preco, ctx, mk, fg){
   const d=plat.det(preco,ctx,mk,fg); const imp=preco*ctx.imposto/100;
@@ -681,13 +736,13 @@ function persistParam(chave,g){ if(!ST.db){ ls.set('parametros_por_conta',parame
 async function persistMuitos(lista,fn){ for(const x of lista){ const ok=await fn(x); if(ok===false) return false; } return true; }
 function recalcContas(){ contas=[...new Set([...contasExtra,...produtos.map(p=>p.cliente||'Sem conta')])].filter(Boolean).sort((a,b)=>a.localeCompare(b)); }
 
-const MK_IDS=['uRebateShopee','uRebateTiktok','uRebateShein','rebateShopee','rebateTiktok','rebateShein','uRebateML','uCupomML','uCupomShopee','uCupomTiktok','uCupomShein','comPrem','comClas','rebateML','cupomML','adsML','afML','cupomShopee','adsShopee','afShopee','cupomTiktok','adsTiktok','afTiktok','cupomShein','adsShein','afShein'];
-const G_IDS=['gImposto','gMargem','gAntecipa','gComShein','gCupomML','gAdsML','gAfML','gCupomShopee','gAdsShopee','gAfShopee','gCupomTiktok','gAdsTiktok','gAfTiktok','gCupomShein','gAdsShein','gAfShein'];
+const MK_IDS=['comMagalu','repMagalu','uRebateMagalu','rebateMagalu','uCupomMagalu','cupomMagalu','adsMagalu','afMagalu','uRebateShopee','uRebateTiktok','uRebateShein','rebateShopee','rebateTiktok','rebateShein','uRebateML','uCupomML','uCupomShopee','uCupomTiktok','uCupomShein','comPrem','comClas','rebateML','cupomML','adsML','afML','cupomShopee','adsShopee','afShopee','cupomTiktok','adsTiktok','afTiktok','cupomShein','adsShein','afShein'];
+const G_IDS=['gImposto','gMargem','gAntecipa','gComShein','gCupomML','gAdsML','gAfML','gCupomShopee','gAdsShopee','gAfShopee','gCupomTiktok','gAdsTiktok','gAfTiktok','gCupomShein','gAdsShein','gAfShein','gComMagalu','gRepMagalu','gCupomMagalu','gAdsMagalu','gAfMagalu'];
 let produtos=ls.get('produtos_cadastrados',[]), historico=ls.get('simulacoes_salvas',[]), contasExtra=ls.get('contas',[]), contas=[], parametros=ls.get('parametros_por_conta',{}), contaSel=ls.get('conta_sel','');
-const DEF_PARAM={gImposto:'11.30',gMargem:'15',gAntecipa:'0',gDevolucao:false,gEventos:false,gComShein:'20',gCupomML:'0',gAdsML:'0',gAfML:'0',gCupomShopee:'0',gAdsShopee:'0',gAfShopee:'0',gCupomTiktok:'0',gAdsTiktok:'0',gAfTiktok:'0',gCupomShein:'0',gAdsShein:'0',gAfShein:'0'};
-const MK_CANAIS=["ML", "Shopee", "Tiktok", "Shein"];
-function garantirSelects(){ [['comPrem','17'],['comClas','12'],['uRebateML','%'],['uRebateShopee','%'],['uRebateTiktok','%'],['uRebateShein','%'],['uCupomML','%'],['uCupomShopee','%'],['uCupomTiktok','%'],['uCupomShein','%']].forEach(([id,d])=>{ const el=$(id); if(el.selectedIndex<0||el.value==='') el.value=d; if(el.selectedIndex<0){ const o=document.createElement('option'); o.value=d; o.textContent=d; el.appendChild(o); el.value=d; } }); }
-function aplicarMarketingPadrao(){ if(!prodSel) return; const g=paramDe(prodSel.cliente); MK_CANAIS.forEach(k=>{ if($('uCupom'+k).value==='%') $('cupom'+k).value=g['gCupom'+k]??0; $('ads'+k).value=g['gAds'+k]??0; $('af'+k).value=g['gAf'+k]??0; }); }
+const DEF_PARAM={gImposto:'11.30',gMargem:'15',gAntecipa:'0',gDevolucao:false,gEventos:false,gComShein:'20',gCupomML:'0',gAdsML:'0',gAfML:'0',gCupomShopee:'0',gAdsShopee:'0',gAfShopee:'0',gCupomTiktok:'0',gAdsTiktok:'0',gAfTiktok:'0',gCupomShein:'0',gAdsShein:'0',gAfShein:'0',gComMagalu:'16',gRepMagalu:'sem',gCupomMagalu:'0',gAdsMagalu:'0',gAfMagalu:'0'};
+const MK_CANAIS=["ML", "Shopee", "Tiktok", "Shein", "Magalu"];
+function garantirSelects(){ [['comPrem','17'],['comClas','12'],['uRebateML','%'],['uRebateShopee','%'],['uRebateTiktok','%'],['uRebateShein','%'],['uCupomML','%'],['uCupomShopee','%'],['uCupomTiktok','%'],['uCupomShein','%'],['comMagalu','16'],['repMagalu','sem'],['uRebateMagalu','%'],['uCupomMagalu','%']].forEach(([id,d])=>{ const el=$(id); if(el.selectedIndex<0||el.value==='') el.value=d; if(el.selectedIndex<0){ const o=document.createElement('option'); o.value=d; o.textContent=d; el.appendChild(o); el.value=d; } }); }
+function aplicarMarketingPadrao(){ if(!prodSel) return; const g=paramDe(prodSel.cliente); MK_CANAIS.forEach(k=>{ if($('uCupom'+k).value==='%') $('cupom'+k).value=g['gCupom'+k]??0; $('ads'+k).value=g['gAds'+k]??0; $('af'+k).value=g['gAf'+k]??0; }); $('comMagalu').value=g.gComMagalu||'16'; $('repMagalu').value=g.gRepMagalu||'sem'; garantirSelects(); }
 function paramDe(conta){ return {...DEF_PARAM, ...(parametros[conta||'_default']||{})}; }
 function visiveis(){ return produtos.filter(p=>!contaSel||p.cliente===contaSel); }
 let modo=ls.get('modo_preco','preco'); if(modo!=='preco'&&modo!=='margem') modo='preco';
@@ -699,7 +754,7 @@ const kg=v=>v>=1?v.toLocaleString('pt-BR',{maximumFractionDigits:3})+' kg':Math.
 
 function globais(){ const g=paramDe(prodSel?prodSel.cliente:contaSel); const n=v=>parseFloat(v)||0; const alvo=modo==='margem'?$('margemAlvo').value:''; const min=n(g.gMargem); return {imposto:n(g.gImposto),margemMin:min,margem:alvo!==''?(parseFloat(alvo)||0):min,antecipa:n(g.gAntecipa),devolucao:!!g.gDevolucao,eventos:!!g.gEventos,comShein:n(g.gComShein)}; }
 function ctxLive(){ const g=globais(); const p=prodSel||{cmv:0,peso:0,c:0,l:0,a:0};
-  const ctx={...g, custo:p.cmv||0, peso:pesoFrete(p), comPrem:num('comPrem'), comClas:num('comClas')};
+  const ctx={...g, custo:p.cmv||0, peso:pesoFrete(p), comPrem:num('comPrem'), comClas:num('comClas'), comMagalu:num('comMagalu'), repMagalu:$('repMagalu').value||'sem'};
   ctx.freteFixoML=freteDoClassico(ctx); return ctx; }
 // frete que o card do Clássico está usando (preço praticado ou sugerido, com ou sem frete grátis)
 function freteDoClassico(ctx){ if(!(ctx.custo>0)||!(ctx.peso>0)) return null;
@@ -793,7 +848,7 @@ function salvar(){
   const era=editId; if(editId){ historico=historico.map(p=>p.id===editId?prod:p); } else { historico=[prod,...historico]; }
   editId=null; renderHist(); Promise.resolve(persistSim(prod)).then(ok=>{ if(ok!==false) notificar(era?'Simulação atualizada.':'Simulação salva no histórico.'); });
 }
-function limpar(){ $('margemAlvo').value=''; ['rebateShopee','rebateTiktok','rebateShein','rebateML','cupomML','adsML','afML','cupomShopee','adsShopee','afShopee','cupomTiktok','adsTiktok','afTiktok','cupomShein','adsShein','afShein'].forEach(id=>$(id).value=0); prodSel=null; syncPick(); precoManual={};freteGratis={};editId=null; $('erro').hidden=true; render(); }
+function limpar(){ $('margemAlvo').value=''; ['rebateMagalu','cupomMagalu','adsMagalu','afMagalu','rebateShopee','rebateTiktok','rebateShein','rebateML','cupomML','adsML','afML','cupomShopee','adsShopee','afShopee','cupomTiktok','adsTiktok','afTiktok','cupomShein','adsShein','afShein'].forEach(id=>$(id).value=0); prodSel=null; syncPick(); precoManual={};freteGratis={};editId=null; $('erro').hidden=true; render(); }
 function carregarHist(p){ if(p.mk) MK_IDS.forEach(id=>{ if(p.mk[id]!=null) $(id).value=p.mk[id]; }); garantirSelects();
   prodSel=produtos.find(x=>x.id==p.prodId)||null; syncPick();
   precoManual={...(p.precoManual||{})}; freteGratis={...(p.freteGratis||{})}; if(p.ativas?.length){ativas=[...p.ativas]; ls.set('plataformas_ativas',ativas);} editId=p.id; render(); showTab('calc'); window.scrollTo({top:0,behavior:'smooth'});
@@ -804,7 +859,7 @@ function renderHist(){
   if(ord==='nome') lista.sort((a,b)=>a.nome.localeCompare(b.nome)); else if(ord==='custo') lista.sort((a,b)=>b.custo-a.custo); else lista.sort((a,b)=>b.id-a.id);
   $('histN').textContent=historico.filter(p=>!contaSel||p.cliente===contaSel).length; $('histEmpty').hidden=lista.length>0; $('histEmpty').textContent=historico.length?'Nenhum produto corresponde à busca.':'Nenhuma simulação salva. Escolha um produto e clique em "Salvar simulação".';
   const cell=(p,id)=>{ const d=p.plataformas[id]; if(!d) return '<td class="n" style="color:var(--muted)">—</td>'; const ok=parseFloat(d.margem.toFixed(1))>=(p.margemObjetivo||0); return `<td class="n">${BRL(d.preco)}<br><span class="chip ${ok?'ok':'warn'}">${d.margem.toFixed(1)}%</span>${d.manual?' <span class="chip">✎</span>':''}</td>`; };
-  $('histBody').innerHTML=lista.map(p=>`<tr><td><strong>${esc(p.nome)}</strong>${p.sku&&p.sku!=='-'?`<br><span class="note">${esc(p.sku)}</span>`:''}</td><td>${esc(p.cliente||'—')}</td><td class="n">${BRL(p.custo)}</td>${['ml_premium','ml_classico','shopee','tiktok','shein'].map(id=>cell(p,id)).join('')}
+  $('histBody').innerHTML=lista.map(p=>`<tr><td><strong>${esc(p.nome)}</strong>${p.sku&&p.sku!=='-'?`<br><span class="note">${esc(p.sku)}</span>`:''}</td><td>${esc(p.cliente||'—')}</td><td class="n">${BRL(p.custo)}</td>${['ml_premium','ml_classico','shopee','tiktok','shein','magalu'].map(id=>cell(p,id)).join('')}
     <td>${confirmDel===p.id?`<span style="display:inline-flex;gap:4px"><button class="btn sm danger" data-del="${p.id}">Confirmar exclusão</button><button class="btn sm" data-cancel="1">Cancelar</button></span>`:`<button class="btn sm" data-edit="${p.id}">Abrir</button> <button class="btn sm danger" data-ask="${p.id}">Excluir</button>`}</td></tr>`).join('');
   $('histBody').querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>carregarHist(historico.find(p=>p.id==b.dataset.edit)));
   $('histBody').querySelectorAll('[data-ask]').forEach(b=>b.onclick=()=>{confirmDel=+b.dataset.ask; renderHist();});
@@ -817,9 +872,9 @@ function atualizarBackup(){
 
 async function copiar(texto, okMsg, el){ try{ await navigator.clipboard.writeText(texto); notificar(okMsg); }catch(e){ if(el){ el.focus(); el.select(); } notificar('Não deu pra copiar automaticamente. O texto está selecionado: use Ctrl+C.'); } }
 function tsvHistorico(){
-  const cols=['Produto','SKU','Custo','ML Premium preço','ML Premium lucro','ML Premium margem %','ML Clássico preço','ML Clássico lucro','ML Clássico margem %','Shopee preço','Shopee lucro','Shopee margem %','TikTok preço','TikTok lucro','TikTok margem %','Shein preço','Shein lucro','Shein margem %'];
+  const cols=['Produto','SKU','Custo','ML Premium preço','ML Premium lucro','ML Premium margem %','ML Clássico preço','ML Clássico lucro','ML Clássico margem %','Shopee preço','Shopee lucro','Shopee margem %','TikTok preço','TikTok lucro','TikTok margem %','Shein preço','Shein lucro','Shein margem %','Magalu preço','Magalu lucro','Magalu margem %'];
   const f=v=>v==null?'':Number(v).toFixed(2).replace('.',',');
-  const rows=historico.map(p=>[p.nome,p.sku,f(p.custo),...['ml_premium','ml_classico','shopee','tiktok','shein'].flatMap(id=>{const d=p.plataformas[id];return d?[f(d.preco),f(d.lucro),f(d.margem)]:['','',''];})]);
+  const rows=historico.map(p=>[p.nome,p.sku,f(p.custo),...['ml_premium','ml_classico','shopee','tiktok','shein','magalu'].flatMap(id=>{const d=p.plataformas[id];return d?[f(d.preco),f(d.lucro),f(d.margem)]:['','',''];})]);
   return [cols,...rows].map(r=>r.join('\t')).join('\n');
 }
 
@@ -828,23 +883,24 @@ let massaCanais=ls.get('massa_canais',PLATS.map(p=>p.id)), massaLinhas=[];
 const MCOLS=[['sku','SKU'],['nome','Produto'],['conta','Conta'],['canal','Canal'],['preco','Preço de venda'],['cmv','CMV'],['imposto','Imposto'],['comissao','Comissão'],['frete','Frete'],['taxa','Taxa fixa / item'],['outras','Antecipa + eventos'],['cupom','Cupom'],['ads','Ads'],['af','Afiliados'],['rebate','Rebate'],['lucro','Lucro'],['margem','Margem %']];
 function ctxProduto(prod,margemAlvo){ const g=paramDe(prod.cliente); const n=v=>parseFloat(v)||0; const min=n(g.gMargem);
   const ctx={imposto:n(g.gImposto),margemMin:min,margem:margemAlvo!=null?margemAlvo:min,antecipa:n(g.gAntecipa),devolucao:!!g.gDevolucao,eventos:!!g.gEventos,comShein:n(g.gComShein),
-    custo:prod.cmv||0,peso:pesoFrete(prod),comPrem:num('mxComPrem'),comClas:num('mxComClas')};
+    custo:prod.cmv||0,peso:pesoFrete(prod),comPrem:num('mxComPrem'),comClas:num('mxComClas'),
+    comMagalu:$('mxComMagalu').value!==''?num('mxComMagalu'):n(g.gComMagalu||16),repMagalu:$('mxRepMagalu').value||g.gRepMagalu||'sem'};
   return {ctx,g}; }
 function mkPadrao(g,k){ const n=v=>parseFloat(v)||0; const ov=id=>{ const v=$(id).value; return v===''?null:(parseFloat(v)||0); };
   const cup=ov('mx_cupom_'+k), uc=$('mxu_cupom_'+k).value, reb=ov('mx_rebate_'+k), ur=$('mxu_rebate_'+k).value, ads=ov('mx_ads_'+k), af=ov('mx_af_'+k);
   const cupom= cup==null ? n(g['gCupom'+k]) : (uc==='%'?cup:0), cupomR= cup!=null&&uc==='R$' ? cup : 0;
   return {cupom,cupomR,ads:ads==null?n(g['gAds'+k]):ads,af:af==null?n(g['gAf'+k]):af,rebate:reb!=null&&ur==='%'?reb:0,rebateR:reb!=null&&ur==='R$'?reb:0}; }
-const MX_IDS=['mxComPrem','mxComClas',...['ML','Shopee','Tiktok','Shein'].flatMap(k=>['mx_cupom_'+k,'mxu_cupom_'+k,'mx_ads_'+k,'mx_af_'+k,'mx_rebate_'+k,'mxu_rebate_'+k])];
+const MX_IDS=['mxComPrem','mxComClas','mxComMagalu','mxRepMagalu',...['ML','Shopee','Tiktok','Shein','Magalu'].flatMap(k=>['mx_cupom_'+k,'mxu_cupom_'+k,'mx_ads_'+k,'mx_af_'+k,'mx_rebate_'+k,'mxu_rebate_'+k])];
 function initMassaParams(){ $('mxComPrem').innerHTML=$('comPrem').innerHTML; $('mxComClas').innerHTML=$('comClas').innerHTML;
   const sv=ls.get('massa_params',{}); MX_IDS.forEach(id=>{ if(sv[id]!=null) $(id).value=sv[id]; });
   if(!sv.mxComPrem) $('mxComPrem').value=$('comPrem').value; if(!sv.mxComClas) $('mxComClas').value=$('comClas').value;
   [['mxComPrem','17'],['mxComClas','12']].forEach(([id,d])=>{ if($(id).selectedIndex<0) $(id).value=d; });
   MX_IDS.forEach(id=>$(id).addEventListener('input',()=>{ const o={}; MX_IDS.forEach(i=>o[i]=$(i).value); ls.set('massa_params',o); renderMassa(); })); }
-$('btnMxLimpar').onclick=()=>{ ['ML','Shopee','Tiktok','Shein'].forEach(k=>['mx_cupom_','mx_ads_','mx_af_','mx_rebate_'].forEach(p=>$(p+k).value='')); const o={}; MX_IDS.forEach(i=>o[i]=$(i).value); ls.set('massa_params',o); renderMassa(); };
+$('btnMxLimpar').onclick=()=>{ $('mxComMagalu').value=''; $('mxRepMagalu').value=''; ['ML','Shopee','Tiktok','Shein','Magalu'].forEach(k=>['mx_cupom_','mx_ads_','mx_af_','mx_rebate_'].forEach(p=>$(p+k).value='')); const o={}; MX_IDS.forEach(i=>o[i]=$(i).value); ls.set('massa_params',o); renderMassa(); };
 function placeholdersMassa(){ const g=contaSel?paramDe(contaSel):null; const n=v=>String(parseFloat(v)||0).replace('.',',');
-  ['ML','Shopee','Tiktok','Shein'].forEach(k=>{ $('mx_cupom_'+k).placeholder=g?n(g['gCupom'+k])+'%':'padrão'; $('mx_ads_'+k).placeholder=g?n(g['gAds'+k]):'padrão'; $('mx_af_'+k).placeholder=g?n(g['gAf'+k]):'padrão'; $('mx_rebate_'+k).placeholder='0'; });
+  ['ML','Shopee','Tiktok','Shein','Magalu'].forEach(k=>{ $('mx_cupom_'+k).placeholder=g?n(g['gCupom'+k])+'%':'padrão'; $('mx_ads_'+k).placeholder=g?n(g['gAds'+k]):'padrão'; $('mx_af_'+k).placeholder=g?n(g['gAf'+k]):'padrão'; $('mx_rebate_'+k).placeholder='0'; });
   const vis=new Set(PLATS.filter(p=>massaCanais.includes(p.id)).map(p=>p.mk)); document.querySelectorAll('[data-mxk]').forEach(tr=>tr.hidden=!vis.has(tr.dataset.mxk));
-  const ov=MX_IDS.filter(id=>/^mx_/.test(id)&&$(id).value!=='').length; $('mxNota').textContent=ov?`· ${ov} campo(s) alterado(s)`:'· usando os padrões das contas'; }
+  const ov=MX_IDS.filter(id=>(/^mx_/.test(id)||/Magalu$/.test(id))&&$(id).value!=='').length; $('mxNota').textContent=ov?`· ${ov} campo(s) alterado(s)`:'· usando os padrões das contas'; }
 function classificar(linhas){ const o={comissao:0,frete:0,taxa:0,outras:0,cupom:0,ads:0,af:0,rebate:0};
   linhas.forEach(([lab,v])=>{ if(/^Comiss/.test(lab)) o.comissao+=v; else if(/frete/i.test(lab)) o.frete+=v; else if(/^Taxa/.test(lab)) o.taxa+=v;
     else if(/^(Antecipa|Eventos)/.test(lab)) o.outras+=v; else if(/^Cupom/.test(lab)) o.cupom+=v; else if(/^Ads/.test(lab)) o.ads+=v; else if(/^Afiliados/.test(lab)) o.af+=v; else if(/^Rebate/.test(lab)) o.rebate+=-v; });
@@ -907,7 +963,7 @@ $('btnMassaPdf').onclick=async()=>{ if(!massaLinhas.length) return notificar('Na
   if(!window.jspdf){ return notificar('Não consegui carregar o gerador de PDF. Recarregue a página e tente de novo.'); }
   const {jsPDF}=window.jspdf; const doc=new jsPDF({orientation:'landscape',unit:'pt',format:'a4'});
   const mv=$('mMargem').value; const fmt=v=>v==null||v===''?'':Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
-  const CORES={ml_premium:[46,157,90],ml_classico:[200,150,0],shopee:[238,77,45],tiktok:[214,41,79],shein:[29,28,25]};
+  const CORES={ml_premium:[46,157,90],ml_classico:[200,150,0],shopee:[238,77,45],tiktok:[214,41,79],shein:[29,28,25],magalu:[0,134,255]};
   const sub=`Conta: ${contaSel||'todas'}   |   Margem: ${mv===''?'mínima de cada conta':mv.replace('.',',')+'% sobre o preço líquido'}   |   ${new Date().toLocaleDateString('pt-BR')}`;
   porCanal().forEach((g,i)=>{ if(i) doc.addPage();
     const cor=CORES[g.pl.id]||[106,44,158];
@@ -972,6 +1028,9 @@ function renderProd(){
   let prev=0; $('tblShein').innerHTML=FRETE_SHEIN.map(([m,t])=>{const r=`<tr><td>${prev} a ${m} kg</td><td class="n">${BRL(t)}</td></tr>`; prev=m; return r;}).join('')+`<tr><td>Acima de 30 kg</td><td class="n">${BRL(106)}</td></tr>`;
   const faixas=['R$ 0 a 18,99','R$ 19 a 48,99','R$ 49 a 78,99','R$ 79 a 99,99','R$ 100 a 119,99','R$ 120 a 149,99','R$ 150 a 199,99','A partir de R$ 200'];
   $('tblML').querySelector('thead').innerHTML='<tr><th>Peso</th>'+faixas.map(f=>`<th class="n">${f}</th>`).join('')+'<th class="n">Frete grátis (&lt; R$ 79)</th></tr>';
+  const pl=['Até 500 g','500 g a 1 kg','1 a 2 kg','2 a 5 kg','5 a 9 kg','9 a 13 kg','13 a 17 kg','17 a 23 kg','23 a 30 kg'].concat(MAGALU_PESOS.slice(9,-1).map((m,i)=>`${MAGALU_PESOS[8+i]} a ${m} kg`),['Acima de 200 kg']);
+  $('tblMagalu').querySelector('thead').innerHTML='<tr><th rowspan="2">Peso</th><th colspan="3" style="text-align:center">R$ 79 a 199</th><th colspan="3" style="text-align:center">Acima de R$ 199</th></tr><tr>'+['Abaixo de 97%','97% ou mais','Fulfillment','Abaixo de 97%','97% ou mais','Fulfillment'].map(h=>`<th class="n">${h}</th>`).join('')+'</tr>';
+  $('tblMagalu').querySelector('tbody').innerHTML=pl.map((lab,i)=>`<tr><td>${lab}</td>${[...MAGALU_A[i],...MAGALU_B[i]].map(v=>`<td class="n">${BRL(v)}</td>`).join('')}</tr>`).join('');
   $('tblML').querySelector('tbody').innerHTML=matrizFrete.map((l,i)=>{const nx=matrizFrete[i+1]; const lab=i===0?'Até 0,3 kg':nx?`${l.minWeight} a ${nx.minWeight} kg`:`Mais de ${l.minWeight} kg`; return `<tr><td>${lab}</td>${l.c.map(v=>`<td class="n">${BRL(v)}</td>`).join('')}<td class="n">${BRL(l.fg)}</td></tr>`;}).join('');
 })();
 
@@ -1071,7 +1130,7 @@ $('pickBusca').addEventListener('keydown',e=>{ const itens=[...$('pickLista').qu
 $('btnSalvar').onclick=salvar; $('btnNova').onclick=limpar;
 $('busca').oninput=renderHist; $('ordem').onchange=renderHist;
 $('btnExcel').onclick=()=>{ const lista=historico.filter(p=>!contaSel||p.cliente===contaSel); if(!lista.length) return notificar('Histórico vazio.');
-  const ids=['ml_premium','ml_classico','shopee','tiktok','shein'], nomes=['ML Premium','ML Clássico','Shopee','TikTok','Shein'];
+  const ids=['ml_premium','ml_classico','shopee','tiktok','shein','magalu'], nomes=['ML Premium','ML Clássico','Shopee','TikTok','Shein','Magalu'];
   const head=['Produto','Conta','SKU','Custo',...nomes.flatMap(n=>[n+' preço',n+' lucro',n+' margem %'])];
   const r2=v=>v==null?'':Math.round(v*100)/100;
   const rows=lista.map(p=>[p.nome,p.cliente||'',p.sku==='-'?'':p.sku,r2(p.custo),...ids.flatMap(id=>{const d=p.plataformas[id];return d?[r2(d.preco),r2(d.lucro),r2(d.margem)]:['','',''];})]);
@@ -1095,6 +1154,7 @@ $('btnBkLoad').onclick=async()=>{ let d; try{ d=JSON.parse($('bk').value); }catc
 $('btnTheme').onclick=()=>{ const r=document.documentElement; const dark=r.dataset.theme==='dark'||(!r.dataset.theme&&matchMedia('(prefers-color-scheme: dark)').matches); r.dataset.theme=dark?'light':'dark'; ls.set('tema',r.dataset.theme); };
 
 (function init(){ const t=ls.get('tema',null); if(t) document.documentElement.dataset.theme=t;
+  if(!ls.get('canal_magalu_ok',false)){ if(!ativas.includes('magalu')){ ativas=[...ativas,'magalu']; ls.set('plataformas_ativas',ativas); } if(!massaCanais.includes('magalu')){ massaCanais=[...massaCanais,'magalu']; ls.set('massa_canais',massaCanais); } ls.set('canal_magalu_ok',true); }
   const mk=ls.get('params_marketing',null); if(mk) MK_IDS.forEach(id=>{ if(mk[id]!=null&&mk[id]!=='') $(id).value=mk[id]; }); garantirSelects();
   produtos.forEach(p=>{ if(!p.cliente) p.cliente='Sem conta'; }); recalcContas();
   if(contaSel&&!contas.includes(contaSel)) contaSel='';
